@@ -1,0 +1,10 @@
+.git
+.agents
+.deps
+.docker-config
+backend/data
+backend/db.sqlite3
+**/__pycache__
+**/*.pyc
+frontend/dist
+frontend/node_modules

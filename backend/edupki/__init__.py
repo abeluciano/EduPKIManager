@@ -1,0 +1,2 @@
+"""Django project for EduPKIManager."""
+

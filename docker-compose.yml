@@ -1,0 +1,116 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-edupki}
+      POSTGRES_USER: ${POSTGRES_USER:-edupki}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-edupki}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-edupki} -d ${POSTGRES_DB:-edupki}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-edupki}
+      POSTGRES_USER: ${POSTGRES_USER:-edupki}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-edupki}
+      POSTGRES_HOST: db
+      CA_KEY_PASSWORD: ${CA_KEY_PASSWORD:-change-this-in-production}
+      EDUPKI_DATA_DIR: /app/backend/data
+      EDUPKI_PUBLIC_BASE_URL: ${EDUPKI_PUBLIC_BASE_URL:-https://edupkimanager.com/api}
+      EDUPKI_ADMIN_PASSWORD: ${EDUPKI_ADMIN_PASSWORD:-admin123}
+      EDUPKI_USER_PASSWORD: ${EDUPKI_USER_PASSWORD:-user123}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-only-edupki-secret}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173,http://edupkimanager.com,http://www.edupkimanager.com,http://edupkimanager.com:3000,http://www.edupkimanager.com:3000,https://edupkimanager.com,https://www.edupkimanager.com,https://localhost}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-https://edupkimanager.com,https://www.edupkimanager.com,http://edupkimanager.com,http://www.edupkimanager.com}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${EDUPKI_API_PORT:-8000}:8000"
+    volumes:
+      - ca_data:/app/backend/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/readiness/', timeout=5).read()\""]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  crl_scheduler:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: python scripts/crl_refresh_loop.py
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-edupki}
+      POSTGRES_USER: ${POSTGRES_USER:-edupki}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-edupki}
+      POSTGRES_HOST: db
+      CA_KEY_PASSWORD: ${CA_KEY_PASSWORD:-change-this-in-production}
+      EDUPKI_DATA_DIR: /app/backend/data
+      EDUPKI_PUBLIC_BASE_URL: ${EDUPKI_PUBLIC_BASE_URL:-https://edupkimanager.com/api}
+      EDUPKI_CRL_DIR: /app/backend/data/crl
+      CRL_REFRESH_SECONDS: ${CRL_REFRESH_SECONDS:-300}
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    volumes:
+      - ca_data:/app/backend/data
+
+  tls_init:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: python scripts/bootstrap_tls_certs.py
+    environment:
+      CA_KEY_PASSWORD: ${CA_KEY_PASSWORD:-change-this-in-production}
+      EDUPKI_DATA_DIR: /app/backend/data
+      EDUPKI_PUBLIC_BASE_URL: ${EDUPKI_PUBLIC_BASE_URL:-https://edupkimanager.com/api}
+      EDUPKI_TLS_CERT_DIR: /app/tls
+      EDUPKI_TLS_HOSTNAME: ${EDUPKI_TLS_HOSTNAME:-edupkimanager.com}
+      EDUPKI_TLS_SANS: ${EDUPKI_TLS_SANS:-edupkimanager.com,www.edupkimanager.com,localhost,127.0.0.1}
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ca_data:/app/backend/data
+      - tls_certs:/app/tls
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+      tls_init:
+        condition: service_completed_successfully
+    ports:
+      - "${EDUPKI_HTTP_PORT:-80}:80"
+      - "${EDUPKI_HTTPS_PORT:-443}:443"
+      - "${EDUPKI_FRONTEND_PORT:-3000}:80"
+    volumes:
+      - tls_certs:/etc/nginx/edupki:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:
+  ca_data:
+  tls_certs:
