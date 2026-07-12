@@ -1,0 +1,190 @@
+{
+  "info": {
+    "name": "EduPKIManager API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api" },
+    { "key": "admin_token", "value": "" },
+    { "key": "user_token", "value": "" },
+    { "key": "certificate_id", "value": "1" },
+    { "key": "server_serial_number", "value": "" },
+    { "key": "serial_number", "value": "" },
+    { "key": "pdf_base64", "value": "JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAzMDAgMTYwXSAvUmVzb3VyY2VzIDw8ID4+IC9Db250ZW50cyA0IDAgUiA+PgplbmRvYmoKNCAwIG9iago8PCAvTGVuZ3RoIDAgPj4Kc3RyZWFtCgplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA1CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDIxOSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDUgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjI2OAolJUVPRgo=" },
+    { "key": "signed_pdf_base64", "value": "" },
+    { "key": "signature_envelope", "value": "{}" }
+  ],
+  "item": [
+    { "name": "Health", "request": { "method": "GET", "url": "{{base_url}}/health/" } },
+    { "name": "Readiness", "request": { "method": "GET", "url": "{{base_url}}/readiness/" } },
+    {
+      "name": "Login Admin",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const data = pm.response.json();", "pm.collectionVariables.set('admin_token', data.token);"] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/auth/login/",
+        "body": { "mode": "raw", "raw": "{\"username\":\"admin\",\"password\":\"admin123\"}" }
+      }
+    },
+    {
+      "name": "Login User",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const data = pm.response.json();", "pm.collectionVariables.set('user_token', data.token);"] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/auth/login/",
+        "body": { "mode": "raw", "raw": "{\"username\":\"user\",\"password\":\"user123\"}" }
+      }
+    },
+    { "name": "Root CA", "request": { "method": "GET", "url": "{{base_url}}/ca/root/" } },
+    { "name": "Root CA PEM", "request": { "method": "GET", "url": "{{base_url}}/ca/root.pem" } },
+    { "name": "CA Chain PEM", "request": { "method": "GET", "url": "{{base_url}}/ca/chain.pem" } },
+    {
+      "name": "Emit Server Certificate",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const data = pm.response.json();", "pm.collectionVariables.set('certificate_id', data.id);", "pm.collectionVariables.set('serial_number', data.serial_number);", "pm.collectionVariables.set('server_serial_number', data.serial_number);"] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+        "url": "{{base_url}}/certificates/",
+        "body": { "mode": "raw", "raw": "{\"common_name\":\"portal.edu.local\",\"certificate_type\":\"server\",\"owner\":\"admin\",\"sans\":[\"portal.edu.local\",\"127.0.0.1\"],\"validity_days\":365}" }
+      }
+    },
+    {
+      "name": "List Certificates",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/certificates/" }
+    },
+    {
+      "name": "Certificate Detail",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/certificates/{{certificate_id}}/" }
+    },
+    {
+      "name": "Validate Certificate Trust",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+        "url": "{{base_url}}/certificates/validate/",
+        "body": { "mode": "raw", "raw": "{\"serial_number\":\"{{serial_number}}\",\"purpose\":\"server_auth\"}" }
+      }
+    },
+    {
+      "name": "Emit User Certificate",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const data = pm.response.json();", "pm.collectionVariables.set('serial_number', data.serial_number);"] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{user_token}}" }],
+        "url": "{{base_url}}/certificates/",
+        "body": { "mode": "raw", "raw": "{\"common_name\":\"student.edu.local\",\"certificate_type\":\"user\",\"sans\":[\"student.edu.local\"],\"validity_days\":365}" }
+      }
+    },
+    {
+      "name": "List Own Certificates",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{user_token}}" }], "url": "{{base_url}}/certificates/" }
+    },
+    {
+      "name": "OCSP Good",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/ocsp/status/",
+        "body": { "mode": "raw", "raw": "{\"serial_number\":\"{{serial_number}}\"}" }
+      }
+    },
+    {
+      "name": "OCSP RFC 6960 DER",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/ocsp-request" }],
+        "url": "{{base_url}}/ocsp/",
+        "body": { "mode": "raw", "raw": "Reemplazar este cuerpo por una solicitud OCSP DER binaria generada con OpenSSL." }
+      }
+    },
+    {
+      "name": "Sign PDF",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('signature_envelope', JSON.stringify(pm.response.json()));"] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{user_token}}" }],
+        "url": "{{base_url}}/pdf/sign/",
+        "body": { "mode": "raw", "raw": "{\"serial_number\":\"{{serial_number}}\",\"pdf_base64\":\"{{pdf_base64}}\"}" }
+      }
+    },
+    {
+      "name": "Verify PDF",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{user_token}}" }],
+        "url": "{{base_url}}/pdf/verify/",
+        "body": { "mode": "raw", "raw": "{\"pdf_base64\":\"{{pdf_base64}}\",\"signature_envelope\":{{signature_envelope}}}" }
+      }
+    },
+    {
+      "name": "Sign PDF PAdES",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const data = pm.response.json();", "pm.collectionVariables.set('signed_pdf_base64', data.signed_pdf_base64 || '');"] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{user_token}}" }],
+        "url": "{{base_url}}/pdf/sign-embedded/",
+        "body": { "mode": "raw", "raw": "{\"serial_number\":\"{{serial_number}}\",\"pdf_base64\":\"{{pdf_base64}}\"}" }
+      }
+    },
+    {
+      "name": "Verify PDF PAdES",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{user_token}}" }],
+        "url": "{{base_url}}/pdf/verify-embedded/",
+        "body": { "mode": "raw", "raw": "{\"signed_pdf_base64\":\"{{signed_pdf_base64}}\"}" }
+      }
+    },
+    {
+      "name": "Renew Certificate",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+        "url": "{{base_url}}/certificates/{{certificate_id}}/renew/",
+        "body": { "mode": "raw", "raw": "{\"validity_days\":365}" }
+      }
+    },
+    {
+      "name": "Suspend Certificate",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+        "url": "{{base_url}}/certificates/{{certificate_id}}/suspend/",
+        "body": { "mode": "raw", "raw": "{}" }
+      }
+    },
+    {
+      "name": "Revoke Certificate",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+        "url": "{{base_url}}/certificates/{{certificate_id}}/revoke/",
+        "body": { "mode": "raw", "raw": "{\"reason\":\"key_compromise\"}" }
+      }
+    },
+    { "name": "CRL PEM", "request": { "method": "GET", "url": "{{base_url}}/crl.pem" } },
+    { "name": "CRL DER", "request": { "method": "GET", "url": "{{base_url}}/crl.der" } },
+    { "name": "CRL Manifest", "request": { "method": "GET", "url": "{{base_url}}/crl/manifest/" } },
+    { "name": "CRL Version PEM", "request": { "method": "GET", "url": "{{base_url}}/crl/1.pem" } },
+    { "name": "CRL Version DER", "request": { "method": "GET", "url": "{{base_url}}/crl/1.der" } },
+    {
+      "name": "OCSP Revoked",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/ocsp/status/",
+        "body": { "mode": "raw", "raw": "{\"serial_number\":\"{{serial_number}}\"}" }
+      }
+    },
+    {
+      "name": "TLS 1.3 Demo",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/tls/demo/" }
+    },
+    {
+      "name": "Audit Log",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/audit/" }
+    }
+  ]
+}
