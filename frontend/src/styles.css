@@ -1,0 +1,579 @@
+:root {
+  color: #17242d;
+  background: #eef3f1;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+main {
+  min-height: 100vh;
+  padding: 28px;
+}
+
+.topbar,
+.metrics,
+.panel,
+.toolGrid {
+  margin: 0 auto;
+  max-width: 1240px;
+}
+
+.topbar {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.brand {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.brand svg,
+.panelHeader svg,
+.metric svg {
+  color: #0f7a6d;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+h1 {
+  font-size: 27px;
+  line-height: 1.05;
+}
+
+h2 {
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.brand span {
+  color: #5c6b73;
+  display: block;
+  font-size: 14px;
+  margin-top: 3px;
+}
+
+.segments {
+  align-items: center;
+  background: #dfe9e6;
+  border: 1px solid #c3d3ce;
+  border-radius: 8px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+}
+
+.segments button,
+.actions button,
+.issuedCert button,
+.resultActions button {
+  align-items: center;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.segments button {
+  background: transparent;
+  color: #293a42;
+  min-height: 38px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.segments .selected {
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(23, 36, 45, 0.13);
+}
+
+.metrics {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.metric {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d0ddda;
+  border-radius: 8px;
+  display: grid;
+  gap: 2px 14px;
+  grid-template-columns: 32px 1fr;
+  min-height: 78px;
+  padding: 16px 18px;
+}
+
+.metric span {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.metric small {
+  color: #5d6b72;
+  grid-column: 2;
+}
+
+.metric svg {
+  grid-row: 1 / span 2;
+}
+
+.metric.alert svg {
+  color: #a94435;
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #d0ddda;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(23, 36, 45, 0.03);
+  padding: 20px;
+  width: 100%;
+}
+
+.panelHeader {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.toolGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.toolGrid > .panel,
+.toolGrid > .toolMessage {
+  margin: 0;
+  max-width: none;
+}
+
+.signPanel,
+.trustPanel {
+  grid-column: span 6;
+}
+
+.verifyPanel {
+  grid-column: span 6;
+}
+
+.userTools .ocspPanel {
+  grid-column: span 6;
+}
+
+.adminTools .ocspPanel {
+  grid-column: span 3;
+}
+
+.adminTools .tlsPanel {
+  grid-column: span 3;
+}
+
+.caPanel {
+  grid-column: span 6;
+}
+
+.auditPanel {
+  grid-column: span 6;
+}
+
+.widePanel,
+.toolMessage {
+  grid-column: 1 / -1;
+}
+
+.toolMessage {
+  background: #e1f2ed;
+  border: 1px solid #afd6cb;
+  border-radius: 8px;
+  color: #0f6c61;
+  font-weight: 750;
+  padding: 12px 14px;
+}
+
+.adminIssue {
+  margin-bottom: 18px;
+}
+
+.tableWrap {
+  border: 1px solid #edf2f0;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 780px;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid #edf2f0;
+  padding: 13px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+th {
+  background: #f6faf9;
+  color: #53646c;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.status {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 9px;
+}
+
+.issued {
+  background: #e1f2ed;
+  color: #0f6c61;
+}
+
+.revoked {
+  background: #f8e4df;
+  color: #a94435;
+}
+
+.suspended,
+.renewed {
+  background: #ecf0f4;
+  color: #42535c;
+}
+
+.loginPage {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+.loginPanel {
+  background: #ffffff;
+  border: 1px solid #d0ddda;
+  border-radius: 8px;
+  box-shadow: 0 18px 45px rgba(23, 36, 45, 0.09);
+  max-width: 420px;
+  padding: 24px;
+  width: 100%;
+}
+
+.loginForm,
+.stackForm {
+  display: grid;
+  gap: 14px;
+}
+
+.loginForm {
+  margin-top: 22px;
+}
+
+.formError {
+  color: #a94435;
+  font-weight: 800;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions button,
+.issuedCert button,
+.resultActions button {
+  background: #eef4f2;
+  color: #263842;
+  height: 36px;
+  width: 36px;
+}
+
+.requestForm {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(220px, 1fr) 170px minmax(150px, 200px) auto;
+}
+
+label {
+  color: #50616a;
+  display: grid;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 7px;
+}
+
+input,
+select,
+textarea {
+  background: #fbfdfc;
+  border: 1px solid #c3d2ce;
+  border-radius: 6px;
+  color: #17242d;
+  min-height: 42px;
+  padding: 9px 10px;
+  width: 100%;
+}
+
+input[type="file"] {
+  align-items: center;
+  display: flex;
+  font-size: 12px;
+  padding: 6px;
+}
+
+input[type="file"]::file-selector-button {
+  background: #edf4f2;
+  border: 0;
+  border-radius: 5px;
+  color: #20313a;
+  cursor: pointer;
+  font-weight: 750;
+  margin-right: 10px;
+  min-height: 28px;
+  padding: 0 10px;
+}
+
+textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.primary,
+.secondary {
+  align-items: center;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 750;
+  gap: 8px;
+  justify-content: center;
+  min-height: 42px;
+  text-decoration: none;
+}
+
+.primary {
+  align-self: end;
+  background: #0f7a6d;
+  color: #ffffff;
+  padding: 0 16px;
+}
+
+.secondary {
+  background: #eef4f2;
+  color: #263842;
+  padding: 0 12px;
+}
+
+.resultBox,
+.auditList {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.auditPanel .auditList {
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.resultActions,
+.buttonRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.buttonRow {
+  justify-content: flex-start;
+}
+
+.verification,
+.resultLine,
+.auditItem {
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.auditList .auditItem {
+  margin-top: 0;
+}
+
+.verification.ok {
+  background: #e1f2ed;
+  color: #0f6c61;
+}
+
+.verification.bad {
+  background: #f8e4df;
+  color: #a94435;
+}
+
+.resultLine,
+.auditItem {
+  background: #f4f8f7;
+  color: #263842;
+}
+
+.resultLine span,
+.auditItem span,
+.auditItem small,
+.muted {
+  color: #5d6b72;
+  overflow-wrap: anywhere;
+}
+
+.smallTextArea {
+  margin-top: 14px;
+  min-height: 96px;
+}
+
+.issuedCert {
+  align-items: center;
+  background: #e1f2ed;
+  border: 1px solid #bfe0d7;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  margin-top: 16px;
+  padding: 14px;
+}
+
+.issuedCert span {
+  color: #41515a;
+  display: block;
+  font-size: 12px;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 980px) {
+  main {
+    padding: 20px;
+  }
+
+  .topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .segments {
+    align-self: flex-start;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .toolGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .signPanel,
+  .verifyPanel,
+  .trustPanel,
+  .userTools .ocspPanel,
+  .adminTools .ocspPanel,
+  .adminTools .tlsPanel,
+  .caPanel,
+  .auditPanel,
+  .widePanel,
+  .toolMessage {
+    grid-column: auto;
+  }
+
+  .requestForm {
+    grid-template-columns: 1fr;
+  }
+
+  .primary {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  main {
+    padding: 14px;
+  }
+
+  h1 {
+    font-size: 23px;
+  }
+
+  h2 {
+    font-size: 19px;
+  }
+
+  .segments {
+    width: 100%;
+  }
+
+  .segments button {
+    flex: 1;
+    padding: 0 8px;
+  }
+
+  .panel,
+  .loginPanel {
+    padding: 16px;
+  }
+
+  .buttonRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .secondary {
+    width: 100%;
+  }
+}
