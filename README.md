@@ -82,6 +82,19 @@ O usa el helper:
 .\scripts\setup_windows_tls.ps1 -TrustRootCa
 ```
 
+### Quitar la configuracion TLS local de Windows
+
+Detener o eliminar los contenedores no revierte los cambios de Windows. Para quitar la entrada de `hosts`, retirar la Root CA de confianza de `CurrentUser\Root` y borrar el certificado descargado por el helper, abre PowerShell como administrador en la raiz del proyecto y ejecuta:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\setup_windows_tls.ps1 -Remove
+```
+
+El cambio de politica con `-Scope Process` solo afecta esa ventana de PowerShell. Al cerrarla se descarta automaticamente y no modifica permanentemente la politica del sistema.
+
+Despues de ejecutar `-Remove`, `https://edupkimanager.com` dejara de apuntar a esta computadora. Mientras los contenedores sigan activos, la aplicacion todavia estara disponible mediante `http://localhost:3000`.
+
 Tambien puedes abrir el respaldo HTTP mientras haces esa instalacion:
 
 ```text

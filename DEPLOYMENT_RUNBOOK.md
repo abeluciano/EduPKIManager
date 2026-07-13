@@ -65,6 +65,15 @@ Para que Edge/Chrome confien en el certificado HTTPS emitido por la CA propia, e
 
 Esto agrega `edupkimanager.com` al archivo `hosts`, descarga la Root CA desde la API y, con `-TrustRootCa`, la importa al almacen `CurrentUser\Root`.
 
+Para retirar posteriormente la configuracion local, abre PowerShell como administrador y ejecuta:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\setup_windows_tls.ps1 -Remove
+```
+
+El comando elimina la entrada de `hosts` creada por el helper, retira la Root CA de `CurrentUser\Root` y borra el certificado descargado. Detener los contenedores por si solo no deshace estos cambios. La politica `Bypass` con alcance `Process` desaparece al cerrar la ventana de PowerShell.
+
 ## 4. Levantar servicios
 
 ```bash
