@@ -770,6 +770,17 @@ Mapeo de estados:
 
 ## Firma PDF
 
+Todos los endpoints de firma y verificacion aceptan archivos PDF de hasta 10 MB antes de codificarlos en Base64. Los errores se devuelven sin trazas ni detalles internos:
+
+```json
+{
+  "code": "pdf_too_large",
+  "detail": "El PDF supera el limite de 10 MB."
+}
+```
+
+Codigos posibles: `pdf_required`, `invalid_pdf`, `pdf_too_large`, `certificate_not_active`, `pdf_hybrid_xref`, `pdf_signing_failed` y `pades_unavailable`.
+
 ### `POST /pdf/sign/`
 
 Firma un documento PDF usando el certificado emitido por la CA propia. La firma es desprendida: se devuelve un sobre JSON con hash del documento, certificado, certificado de CA y firma en Base64.
@@ -856,7 +867,9 @@ Respuesta `200`:
 }
 ```
 
-Si `pyHanko` no esta instalado, responde `501`.
+Si `pyHanko` no esta disponible, responde `503` con el codigo `pades_unavailable`.
+
+Si el PDF usa secciones de referencias cruzadas hibridas que PyHanko no puede firmar de forma segura, responde `422` con el codigo `pdf_hybrid_xref`. El usuario puede guardar el documento como un PDF nuevo o utilizar la firma desprendida JSON.
 
 ### `POST /pdf/verify/`
 

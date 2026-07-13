@@ -116,6 +116,8 @@ Las operaciones de firma permiten dos formatos de PDF:
 - Firma embebida PAdES-B-B, que devuelve un PDF firmado descargable.
 - Validacion de confianza X.509 por proposito: firma documental, TLS servidor, cliente, dispositivo o general.
 
+Los archivos PDF tienen un limite de 10 MB. La interfaz valida el archivo antes de enviarlo y muestra mensajes breves para archivos invalidos, demasiado grandes o con una estructura de referencias hibridas no compatible con PAdES.
+
 ## CRL Versionada
 
 La CRL se publica con versiones persistentes:
