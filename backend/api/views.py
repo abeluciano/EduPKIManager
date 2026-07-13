@@ -20,7 +20,7 @@ from audit.service import append_audit_entry, default_audit_log_path, read_audit
 from ca.service import CertificateRequest, ca_certificate_pem, ca_chain_pem, intermediate_ca_certificate_pem, issue_certificate
 from crl.publication import latest_crl_bytes, load_manifest, publish_crl_if_needed, versioned_crl_bytes
 from ocsp.service import OcspCertificateState, build_ocsp_response, build_standard_ocsp_response, build_unsuccessful_ocsp_response, inspect_ocsp_response
-from pdf_sign.pades import PadesDependencyError, pades_signature_response, sign_pdf_pades_bytes, verify_pdf_pades_bytes
+from pdf_sign.pades import PadesDependencyError, PadesPdfError, pades_signature_response, sign_pdf_pades_bytes, verify_pdf_pades_bytes
 from pdf_sign.service import sign_pdf_bytes, verify_pdf_signature
 from scripts.tls13_demo import run_tls13_handshake_demo
 from validation.trust import validate_certificate_trust
@@ -31,6 +31,15 @@ from .users import OWNER_ACCOUNTS, OWNER_NAMES
 
 AUDIT_LOG = default_audit_log_path()
 AUTH_SALT = "edupki-auth-v1"
+MAX_PDF_BYTES = 10 * 1024 * 1024
+
+
+class PdfPayloadError(ValueError):
+    def __init__(self, code: str, detail: str, status_code: int = status.HTTP_400_BAD_REQUEST):
+        super().__init__(detail)
+        self.code = code
+        self.detail = detail
+        self.status_code = status_code
 
 
 class HealthView(APIView):
@@ -367,8 +376,15 @@ class PdfSignView(APIView):
         _ensure_record_access(request, record)
         if record.status != "issued":
             append_audit_entry(AUDIT_LOG, "sign_pdf", _actor(request), "failed", {"serial": record.serial_number, "status": record.status})
-            return Response({"detail": "Only issued certificates can sign documents."}, status=status.HTTP_400_BAD_REQUEST)
-        pdf_bytes = base64.b64decode(request.data["pdf_base64"])
+            return Response(
+                {"code": "certificate_not_active", "detail": "Solo los certificados activos pueden firmar documentos."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            pdf_bytes = _decode_pdf_payload(request.data, "pdf_base64")
+        except PdfPayloadError as exc:
+            append_audit_entry(AUDIT_LOG, "sign_pdf", _actor(request), "failed", {"serial": record.serial_number, "error": exc.code})
+            return _pdf_payload_error_response(exc)
         envelope = sign_pdf_bytes(pdf_bytes, record.certificate_pem, record.private_key_pem, actor=_actor(request))
         append_audit_entry(AUDIT_LOG, "sign_pdf", _actor(request), "success", {"serial": record.serial_number})
         return Response(envelope)
@@ -377,7 +393,11 @@ class PdfSignView(APIView):
 class PdfVerifyView(APIView):
     def post(self, request):
         _require_role(request, {"admin", "user"})
-        pdf_bytes = base64.b64decode(request.data["pdf_base64"])
+        try:
+            pdf_bytes = _decode_pdf_payload(request.data, "pdf_base64")
+        except PdfPayloadError as exc:
+            append_audit_entry(AUDIT_LOG, "verify_pdf_signature", _actor(request), "failed", {"error": exc.code})
+            return _pdf_payload_error_response(exc)
         signature_envelope = request.data["signature_envelope"]
         signature_payload = json.loads(signature_envelope) if isinstance(signature_envelope, str) else signature_envelope
         result = verify_pdf_signature(pdf_bytes, signature_payload)
@@ -404,13 +424,26 @@ class PdfEmbeddedSignView(APIView):
         _ensure_record_access(request, record)
         if record.status != "issued":
             append_audit_entry(AUDIT_LOG, "sign_pdf_pades", _actor(request), "failed", {"serial": record.serial_number, "status": record.status})
-            return Response({"detail": "Only issued certificates can sign documents."}, status=status.HTTP_400_BAD_REQUEST)
-        pdf_bytes = base64.b64decode(request.data["pdf_base64"])
+            return Response(
+                {"code": "certificate_not_active", "detail": "Solo los certificados activos pueden firmar documentos."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            pdf_bytes = _decode_pdf_payload(request.data, "pdf_base64")
+        except PdfPayloadError as exc:
+            append_audit_entry(AUDIT_LOG, "sign_pdf_pades", _actor(request), "failed", {"serial": record.serial_number, "error": exc.code})
+            return _pdf_payload_error_response(exc)
         try:
             signature = sign_pdf_pades_bytes(pdf_bytes, record.certificate_pem, record.private_key_pem)
+        except PadesPdfError as exc:
+            append_audit_entry(AUDIT_LOG, "sign_pdf_pades", _actor(request), "failed", {"serial": record.serial_number, "error": exc.code})
+            return Response({"code": exc.code, "detail": exc.detail}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         except PadesDependencyError as exc:
             append_audit_entry(AUDIT_LOG, "sign_pdf_pades", _actor(request), "failed", {"serial": record.serial_number, "error": str(exc)})
-            return Response({"detail": str(exc)}, status=status.HTTP_501_NOT_IMPLEMENTED)
+            return Response(
+                {"code": "pades_unavailable", "detail": "La firma PAdES no esta disponible temporalmente."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         append_audit_entry(AUDIT_LOG, "sign_pdf_pades", _actor(request), "success", {"serial": record.serial_number})
         return Response(pades_signature_response(signature))
 
@@ -418,12 +451,22 @@ class PdfEmbeddedSignView(APIView):
 class PdfEmbeddedVerifyView(APIView):
     def post(self, request):
         _require_role(request, {"admin", "user"})
-        signed_pdf_bytes = base64.b64decode(request.data["signed_pdf_base64"])
+        try:
+            signed_pdf_bytes = _decode_pdf_payload(request.data, "signed_pdf_base64")
+        except PdfPayloadError as exc:
+            append_audit_entry(AUDIT_LOG, "verify_pdf_pades", _actor(request), "failed", {"error": exc.code})
+            return _pdf_payload_error_response(exc)
         try:
             result = verify_pdf_pades_bytes(signed_pdf_bytes)
+        except PadesPdfError as exc:
+            append_audit_entry(AUDIT_LOG, "verify_pdf_pades", _actor(request), "failed", {"error": exc.code})
+            return Response({"code": exc.code, "detail": exc.detail}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         except PadesDependencyError as exc:
             append_audit_entry(AUDIT_LOG, "verify_pdf_pades", _actor(request), "failed", {"error": str(exc)})
-            return Response({"detail": str(exc)}, status=status.HTTP_501_NOT_IMPLEMENTED)
+            return Response(
+                {"code": "pades_unavailable", "detail": "La verificacion PAdES no esta disponible temporalmente."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         append_audit_entry(AUDIT_LOG, "verify_pdf_pades", _actor(request), "success" if result["valid"] else "failed", result)
         return Response(result)
 
@@ -454,6 +497,29 @@ class TlsDemoView(APIView):
         result = run_tls13_handshake_demo()
         append_audit_entry(AUDIT_LOG, "tls13_handshake_demo", _actor(request), "success", result)
         return Response(result)
+
+
+def _decode_pdf_payload(data, field_name: str) -> bytes:
+    encoded = data.get(field_name)
+    if not isinstance(encoded, str) or not encoded:
+        raise PdfPayloadError("pdf_required", "Selecciona un archivo PDF.")
+    try:
+        pdf_bytes = base64.b64decode(encoded, validate=True)
+    except (ValueError, TypeError) as exc:
+        raise PdfPayloadError("invalid_pdf", "El archivo PDF no se pudo leer.") from exc
+    if len(pdf_bytes) > MAX_PDF_BYTES:
+        raise PdfPayloadError(
+            "pdf_too_large",
+            "El PDF supera el limite de 10 MB.",
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+        )
+    if not pdf_bytes.startswith(b"%PDF-"):
+        raise PdfPayloadError("invalid_pdf", "El archivo seleccionado no es un PDF valido.")
+    return pdf_bytes
+
+
+def _pdf_payload_error_response(exc: PdfPayloadError) -> Response:
+    return Response({"code": exc.code, "detail": exc.detail}, status=exc.status_code)
 
 
 def _record_payload(record: CertificateRecord, include_private_key: bool = False) -> dict[str, object]:

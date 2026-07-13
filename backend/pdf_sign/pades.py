@@ -15,6 +15,13 @@ class PadesDependencyError(RuntimeError):
     pass
 
 
+class PadesPdfError(ValueError):
+    def __init__(self, code: str, detail: str):
+        super().__init__(detail)
+        self.code = code
+        self.detail = detail
+
+
 @dataclass(frozen=True)
 class EmbeddedPdfSignature:
     signed_pdf_bytes: bytes
@@ -32,7 +39,9 @@ def sign_pdf_pades_bytes(
     modules = _load_pyhanko()
     signers = modules["signers"]
     IncrementalPdfFileWriter = modules["IncrementalPdfFileWriter"]
+    PdfReadError = modules["PdfReadError"]
     SigSeedSubFilter = modules["SigSeedSubFilter"]
+    SigningError = modules["SigningError"]
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
@@ -51,16 +60,32 @@ def sign_pdf_pades_bytes(
             ca_chain_files=(str(intermediate_path), str(root_path)),
             key_passphrase=None,
         )
-        writer = IncrementalPdfFileWriter(BytesIO(pdf_bytes))
-        output = BytesIO()
-        metadata = signers.PdfSignatureMetadata(
-            field_name=field_name,
-            md_algorithm="sha256",
-            reason="EduPKIManager PAdES signature",
-            location="EduPKIManager",
-            subfilter=SigSeedSubFilter.PADES,
-        )
-        signers.sign_pdf(writer, metadata, signer=signer, output=output)
+        try:
+            writer = IncrementalPdfFileWriter(BytesIO(pdf_bytes))
+            output = BytesIO()
+            metadata = signers.PdfSignatureMetadata(
+                field_name=field_name,
+                md_algorithm="sha256",
+                reason="EduPKIManager PAdES signature",
+                location="EduPKIManager",
+                subfilter=SigSeedSubFilter.PADES,
+            )
+            signers.sign_pdf(writer, metadata, signer=signer, output=output)
+        except SigningError as exc:
+            if "hybrid cross-reference" in str(exc).lower():
+                raise PadesPdfError(
+                    "pdf_hybrid_xref",
+                    "Este PDF usa una estructura interna no compatible con la firma PAdES. Guardalo como un PDF nuevo y vuelve a intentarlo, o utiliza Firmar JSON.",
+                ) from exc
+            raise PadesPdfError(
+                "pdf_signing_failed",
+                "No se pudo insertar la firma PAdES en este PDF. Revisa el archivo o intenta con Firmar JSON.",
+            ) from exc
+        except PdfReadError as exc:
+            raise PadesPdfError(
+                "invalid_pdf",
+                "El archivo no tiene una estructura PDF valida o esta danado.",
+            ) from exc
         signed_pdf = output.getvalue()
         return EmbeddedPdfSignature(
             signed_pdf_bytes=signed_pdf,
@@ -73,6 +98,7 @@ def sign_pdf_pades_bytes(
 def verify_pdf_pades_bytes(signed_pdf_bytes: bytes) -> dict[str, Any]:
     modules = _load_pyhanko()
     PdfFileReader = modules["PdfFileReader"]
+    PdfReadError = modules["PdfReadError"]
     ValidationContext = modules["ValidationContext"]
     load_cert_from_pemder = modules["load_cert_from_pemder"]
     validate_pdf_signature = modules["validate_pdf_signature"]
@@ -83,8 +109,14 @@ def verify_pdf_pades_bytes(signed_pdf_bytes: bytes) -> dict[str, Any]:
         root_cert = load_cert_from_pemder(str(root_path))
         validation_context = ValidationContext(trust_roots=[root_cert], allow_fetching=False)
 
-        reader = PdfFileReader(BytesIO(signed_pdf_bytes))
-        embedded_signatures = list(reader.embedded_signatures)
+        try:
+            reader = PdfFileReader(BytesIO(signed_pdf_bytes))
+            embedded_signatures = list(reader.embedded_signatures)
+        except PdfReadError as exc:
+            raise PadesPdfError(
+                "invalid_pdf",
+                "El archivo no tiene una estructura PDF valida o esta danado.",
+            ) from exc
         results = []
         for embedded_signature in embedded_signatures:
             status = validate_pdf_signature(
@@ -130,10 +162,11 @@ def _status_summary(status: Any) -> str:
 def _load_pyhanko() -> dict[str, Any]:
     try:
         from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+        from pyhanko.pdf_utils.misc import PdfReadError
         from pyhanko.pdf_utils.reader import PdfFileReader
         from pyhanko.sign import signers, validation
         from pyhanko.sign.fields import SigSeedSubFilter
-        from pyhanko.sign.general import load_cert_from_pemder
+        from pyhanko.sign.general import SigningError, load_cert_from_pemder
         from pyhanko_certvalidator import ValidationContext
     except ImportError as exc:
         raise PadesDependencyError(
@@ -143,10 +176,11 @@ def _load_pyhanko() -> dict[str, Any]:
     return {
         "IncrementalPdfFileWriter": IncrementalPdfFileWriter,
         "PdfFileReader": PdfFileReader,
+        "PdfReadError": PdfReadError,
         "SigSeedSubFilter": SigSeedSubFilter,
+        "SigningError": SigningError,
         "ValidationContext": ValidationContext,
         "load_cert_from_pemder": load_cert_from_pemder,
         "signers": signers,
         "validate_pdf_signature": validation.validate_pdf_signature,
     }
-

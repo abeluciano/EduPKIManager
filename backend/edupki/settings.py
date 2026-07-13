@@ -93,3 +93,4 @@ CSRF_TRUSTED_ORIGINS = os.getenv(
 )
 CSRF_TRUSTED_ORIGINS = [item.strip() for item in CSRF_TRUSTED_ORIGINS.split(",") if item.strip()]
 EDUPKI_ADMIN_PASSWORD = os.getenv("EDUPKI_ADMIN_PASSWORD", "admin123")
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv("DATA_UPLOAD_MAX_MEMORY_SIZE", str(20 * 1024 * 1024)))
