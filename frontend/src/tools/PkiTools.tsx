@@ -2,7 +2,14 @@ import { Download, FileCheck2, FileSignature, ListChecks, Radio, Search, ShieldC
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import type { AuditLogResponse, CertificateRecord, CrlManifest, OcspResponse, PadesSignResponse, PadesVerifyResponse, PdfSignatureEnvelope, PdfVerification, TlsDemoResponse, TrustPurpose, TrustReport } from "../api/client";
-import { apiUrl, checkOcsp, getAuditLog, getCrlManifest, getRootCa, runTlsDemo, signPdf, signPdfEmbedded, validateCertificateTrust, verifyPdf, verifyPdfEmbedded } from "../api/client";
+import { ApiError, apiUrl, checkOcsp, getAuditLog, getCrlManifest, getRootCa, runTlsDemo, signPdf, signPdfEmbedded, validateCertificateTrust, verifyPdf, verifyPdfEmbedded } from "../api/client";
+
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
+
+type ToolNotice = {
+  text: string;
+  tone: "info" | "error";
+};
 
 type Props = {
   certificates: CertificateRecord[];
@@ -30,7 +37,7 @@ export function PkiTools({ certificates, role }: Props) {
   const [audit, setAudit] = useState<AuditLogResponse>();
   const [tls, setTls] = useState<TlsDemoResponse>();
   const [crlManifest, setCrlManifest] = useState<CrlManifest>();
-  const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState<ToolNotice>();
 
   useEffect(() => {
     if (!serialNumber && defaultSerial) setSerialNumber(defaultSerial);
@@ -44,8 +51,28 @@ export function PkiTools({ certificates, role }: Props) {
   async function loadPdf(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    setPdfBase64(await fileToBase64(file));
-    setMessage(file.name);
+    if (file.size > MAX_PDF_BYTES) {
+      setPdfBase64("");
+      event.target.value = "";
+      showError("El PDF supera el limite de 10 MB. Selecciona un archivo mas pequeno.");
+      return;
+    }
+    try {
+      const content = await fileToBase64(file);
+      if (!window.atob(content.slice(0, 12)).startsWith("%PDF-")) {
+        setPdfBase64("");
+        event.target.value = "";
+        showError("El archivo seleccionado no es un PDF valido.");
+        return;
+      }
+      setPdfBase64(content);
+      setPadesSignature(undefined);
+      setPadesVerification(undefined);
+      showInfo(file.name);
+    } catch {
+      setPdfBase64("");
+      showError("No se pudo leer el archivo PDF.");
+    }
   }
 
   async function loadSignature(event: ChangeEvent<HTMLInputElement>) {
@@ -55,9 +82,9 @@ export function PkiTools({ certificates, role }: Props) {
       const text = await file.text();
       setSignatureText(text);
       setSignatureEnvelope(JSON.parse(text) as PdfSignatureEnvelope);
-      setMessage(file.name);
+      showInfo(file.name);
     } catch {
-      setMessage("Firma JSON invalida");
+      showError("La firma JSON seleccionada no es valida.");
     }
   }
 
@@ -68,9 +95,9 @@ export function PkiTools({ certificates, role }: Props) {
       setSignatureEnvelope(envelope);
       setSignatureText(JSON.stringify(envelope, null, 2));
       setVerification(undefined);
-      setMessage("PDF firmado");
+      showInfo("PDF firmado correctamente.");
     } catch (error) {
-      setMessage(readError(error));
+      showError(readError(error));
     }
   }
 
@@ -81,9 +108,9 @@ export function PkiTools({ certificates, role }: Props) {
       const response = await verifyPdf({ pdf_base64: pdfBase64, signature_envelope: envelope });
       setVerification(response);
       if (response.trust_report) setTrustReport(response.trust_report);
-      setMessage("Firma verificada");
+      showInfo("Firma verificada.");
     } catch (error) {
-      setMessage(readError(error));
+      showError(readError(error));
     }
   }
 
@@ -91,18 +118,18 @@ export function PkiTools({ certificates, role }: Props) {
     try {
       const response = await signPdfEmbedded({ serial_number: serialNumber, pdf_base64: pdfBase64 });
       setPadesSignature(response);
-      setMessage("PDF PAdES firmado");
+      showInfo("PDF PAdES firmado correctamente.");
     } catch (error) {
-      setMessage(readError(error));
+      showError(readError(error));
     }
   }
 
   async function submitPadesVerify() {
     try {
       setPadesVerification(await verifyPdfEmbedded({ signed_pdf_base64: pdfBase64 }));
-      setMessage("PDF PAdES verificado");
+      showInfo("PDF PAdES verificado.");
     } catch (error) {
-      setMessage(readError(error));
+      showError(readError(error));
     }
   }
 
@@ -111,7 +138,7 @@ export function PkiTools({ certificates, role }: Props) {
     try {
       setOcsp(await checkOcsp(serialNumber));
     } catch (error) {
-      setMessage(readError(error));
+      showError(readError(error));
     }
   }
 
@@ -119,9 +146,9 @@ export function PkiTools({ certificates, role }: Props) {
     event.preventDefault();
     try {
       setTrustReport(await validateCertificateTrust({ serial_number: serialNumber, purpose: trustPurpose }));
-      setMessage("Confianza evaluada");
+      showInfo("Confianza evaluada.");
     } catch (error) {
-      setMessage(readError(error));
+      showError(readError(error));
     }
   }
 
@@ -132,7 +159,7 @@ export function PkiTools({ certificates, role }: Props) {
       setRootCa(root);
       downloadText("edupki-root-ca.pem", root);
     } catch (error) {
-      setMessage(readError(error));
+      showError(readError(error));
     }
   }
 
@@ -140,7 +167,7 @@ export function PkiTools({ certificates, role }: Props) {
     try {
       setAudit(await getAuditLog());
     } catch (error) {
-      setMessage(readError(error));
+      showError(readError(error));
     }
   }
 
@@ -148,7 +175,7 @@ export function PkiTools({ certificates, role }: Props) {
     try {
       setCrlManifest(await getCrlManifest());
     } catch (error) {
-      setMessage(readError(error));
+      showError(readError(error));
     }
   }
 
@@ -156,13 +183,13 @@ export function PkiTools({ certificates, role }: Props) {
     try {
       setTls(await runTlsDemo());
     } catch (error) {
-      setMessage(readError(error));
+      showError(readError(error));
     }
   }
 
   return (
     <div className={`toolGrid ${role === "admin" ? "adminTools" : "userTools"}`}>
-      {message && <div className="toolMessage widePanel">{message}</div>}
+      {notice && <div className={`toolMessage widePanel ${notice.tone}`} role={notice.tone === "error" ? "alert" : "status"}>{notice.text}</div>}
       <section className="panel toolPanel signPanel">
         <div className="panelHeader">
           <FileSignature size={22} />
@@ -429,15 +456,24 @@ export function PkiTools({ certificates, role }: Props) {
       )}
     </div>
   );
+
+  function showInfo(text: string) {
+    setNotice({ text, tone: "info" });
+  }
+
+  function showError(text: string) {
+    setNotice({ text, tone: "error" });
+  }
 }
 
 async function fileToBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
   let binary = "";
   const bytes = new Uint8Array(buffer);
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
+  const chunkSize = 32 * 1024;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
   return window.btoa(binary);
 }
 
@@ -467,7 +503,21 @@ function downloadBase64(filename: string, contentBase64: string, mimeType: strin
 }
 
 function readError(error: unknown) {
-  return error instanceof Error ? error.message : "Operacion fallida";
+  if (!(error instanceof ApiError)) return "No se pudo completar la operacion. Intenta nuevamente.";
+  if (error.code === "pdf_too_large" || error.status === 413) {
+    return "El PDF supera el limite de 10 MB. Selecciona un archivo mas pequeno.";
+  }
+  if (error.code === "pdf_hybrid_xref") {
+    return "Este PDF usa una estructura interna no compatible con PAdES. Guardalo como un PDF nuevo y vuelve a intentarlo, o utiliza Firmar JSON.";
+  }
+  if (error.code === "pdf_signing_failed") return "No se pudo insertar la firma PAdES en este PDF. Intenta con Firmar JSON.";
+  if (error.code === "invalid_pdf" || error.code === "pdf_required") return error.detail;
+  if (error.code === "certificate_not_active") return "Selecciona un certificado activo para firmar.";
+  if (error.code === "pades_unavailable") return "La firma PAdES no esta disponible temporalmente.";
+  if (error.status === 401) return "Tu sesion vencio. Vuelve a iniciar sesion.";
+  if (error.status === 403) return "No tienes permiso para realizar esta operacion.";
+  if (error.status >= 500) return "El servicio no pudo completar la operacion. Intenta nuevamente.";
+  return "La operacion no pudo procesarse. Revisa el archivo y los datos seleccionados.";
 }
 
 function defaultPurpose(certificate: CertificateRecord): TrustPurpose {

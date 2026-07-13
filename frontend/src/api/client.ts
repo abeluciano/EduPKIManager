@@ -11,6 +11,17 @@ export type CertificateRecord = {
   not_after: string;
 };
 
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    public readonly detail: string,
+  ) {
+    super(detail);
+    this.name = "ApiError";
+  }
+}
+
 export type AuthSession = {
   actor: string;
   display_name: string;
@@ -205,9 +216,33 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   });
   if (!response.ok) {
-    throw new Error(await response.text());
+    let code = "request_failed";
+    let detail = defaultErrorMessage(response.status);
+    if (response.headers.get("content-type")?.includes("application/json")) {
+      try {
+        const payload = await response.json() as { code?: unknown; detail?: unknown };
+        if (typeof payload.code === "string") code = payload.code;
+        if (typeof payload.detail === "string" && payload.detail.length <= 300) detail = payload.detail;
+      } catch {
+        // The status-based message remains intentionally free of server internals.
+      }
+    }
+    if (response.status === 413) {
+      code = "pdf_too_large";
+      detail = "El PDF supera el limite de 10 MB.";
+    }
+    throw new ApiError(response.status, code, detail);
   }
   return response.json() as Promise<T>;
+}
+
+function defaultErrorMessage(status: number) {
+  if (status === 400) return "La solicitud no se pudo procesar. Revisa los datos seleccionados.";
+  if (status === 401) return "Tu sesion vencio. Vuelve a iniciar sesion.";
+  if (status === 403) return "No tienes permiso para realizar esta operacion.";
+  if (status === 404) return "No se encontro el recurso solicitado.";
+  if (status >= 500) return "El servicio no pudo completar la operacion. Intenta nuevamente.";
+  return "No se pudo completar la operacion.";
 }
 
 export function login(payload: { username: string; password: string }) {

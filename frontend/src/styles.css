@@ -216,6 +216,12 @@ h2 {
   grid-column: 1 / -1;
 }
 
+.toolMessage.error {
+  background: #f8e4df;
+  border-color: #e4b7ac;
+  color: #8e3427;
+}
+
 .toolMessage {
   background: #e1f2ed;
   border: 1px solid #afd6cb;
