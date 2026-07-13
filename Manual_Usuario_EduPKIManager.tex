@@ -57,17 +57,21 @@
     \end{center}
 }
 
-\newcommand{\captura}[2]{
+\newcommand{\captura}[3]{
     \begin{figure}[H]
         \centering
-        \fbox{
-            \begin{minipage}[c][5cm][c]{0.88\textwidth}
-                \centering
-                \textbf{#1}\\[0.4cm]
-                \small Inserte aqui la captura correspondiente del sistema.
-            \end{minipage}
+        \IfFileExists{img_latex/#1.png}{
+            \includegraphics[width=0.92\textwidth,height=0.62\textheight,keepaspectratio]{img_latex/#1.png}
+        }{
+            \fbox{
+                \begin{minipage}[c][5cm][c]{0.88\textwidth}
+                    \centering
+                    \textbf{#2}\\[0.4cm]
+                    \small Falta la imagen: \texttt{img\_latex/#1.png}
+                \end{minipage}
+            }
         }
-        \caption{#2}
+        \caption{#3}
     \end{figure}
 }
 
@@ -180,7 +184,7 @@ Luego abra el navegador en una de las siguientes direcciones:
     \item API directa: \url{http://127.0.0.1:8000/api}
 \end{itemize}
 
-\captura{Pantalla de inicio de EduPKIManager}{Acceso al sistema EduPKIManager}
+\captura{pantalla_inicio_edupkimanager}{Pantalla de inicio de EduPKIManager}{Acceso al sistema EduPKIManager}
 
 \subsection{Credenciales de Demostracion}
 
@@ -201,7 +205,7 @@ Usuario final & \texttt{user / user123} & Solicitud de certificados personales, 
 
 Al abrir el sistema se presenta una pantalla de autenticacion. El usuario debe ingresar su nombre de usuario y contrasena. Despues de iniciar sesion, el frontend recibe un token y lo usa para comunicarse con la API.
 
-\captura{Formulario de inicio de sesion}{Inicio de sesion con rol administrador o usuario}
+\captura{formulario_inicio_sesion}{Formulario de inicio de sesion}{Inicio de sesion con rol administrador o usuario}
 
 \subsection{Barra Superior}
 
@@ -213,7 +217,7 @@ La barra superior muestra el nombre EduPKIManager, el subtitulo de la consola y 
     \item El boton de salida permite cerrar la sesion actual y volver al login.
 \end{itemize}
 
-\captura{Barra superior por roles}{Navegacion principal del sistema}
+\captura{barra_superior_roles}{Barra superior por roles}{Navegacion principal del sistema}
 
 \subsection{Tarjetas de Resumen}
 
@@ -233,7 +237,7 @@ Para el administrador, los indicadores se calculan sobre todos los certificados.
 
 El panel de administrador permite administrar el ciclo de vida completo de certificados emitidos por EduPKIManager. Desde esta vista se pueden emitir certificados para usuarios, servidores o dispositivos, consultar su estado, renovarlos, suspenderlos o revocarlos.
 
-\captura{Panel de Administracion}{Panel de gestion completa para administradores}
+\captura{panel_administracion}{Panel de Administracion}{Panel de gestion completa para administradores}
 
 \subsection{Emitir un Certificado}
 
@@ -252,7 +256,7 @@ Para emitir un certificado:
 
 Al finalizar, el sistema registra el certificado, muestra sus datos y conserva la trazabilidad de auditoria.
 
-\captura{Formulario de emision de certificados}{Emision de certificado X.509 v3}
+\captura{formulario_emision_certificados}{Formulario de emision de certificados}{Emision de certificado X.509 v3}
 
 \subsection{Listar y Consultar Certificados}
 
@@ -307,7 +311,7 @@ La revocacion invalida el certificado y lo incluye en la CRL. Debe usarse cuando
 
 El portal de usuario final esta orientado a operaciones personales. El usuario puede solicitar certificados propios, descargarlos, consultar su estado, firmar documentos y validar certificados o firmas.
 
-\captura{Portal de usuario final}{Vista Mi portal para usuario final}
+\captura{portal_usuario_final}{Portal de usuario final}{Vista Mi portal para usuario final}
 
 \subsection{Solicitar Certificado Personal}
 
@@ -352,7 +356,7 @@ Proceso general:
     \item Descargue el resultado generado.
 \end{enumerate}
 
-\captura{Modulo de firma PDF}{Firma digital de documentos PDF}
+\captura{modulo_firma_pdf}{Modulo de firma PDF}{Firma digital de documentos PDF}
 
 \subsection{Verificacion de PDF}
 
@@ -373,7 +377,7 @@ Para verificar un PDF PAdES:
     \item Revise si la firma esta intacta, confiable y asociada a la Root CA de EduPKIManager.
 \end{enumerate}
 
-\captura{Modulo de verificacion PDF}{Verificacion de firmas desprendidas y PAdES}
+\captura{modulo_verificacion_pdf}{Modulo de verificacion PDF}{Verificacion de firmas desprendidas y PAdES}
 
 \subsection{Validacion de Confianza X.509}
 
@@ -399,7 +403,7 @@ El usuario debe seleccionar el certificado y el proposito de validacion:
     \item General.
 \end{itemize}
 
-\captura{Modulo de confianza X.509}{Validacion de cadena y usos permitidos}
+\captura{modulo_confianza_x509}{Modulo de confianza X.509}{Validacion de cadena y usos permitidos}
 
 \subsection{Consulta OCSP}
 
@@ -412,7 +416,7 @@ OCSP permite conocer el estado en linea de un certificado usando su numero de se
     \item Revise el estado devuelto: \texttt{good}, \texttt{revoked} o \texttt{unknown}.
 \end{enumerate}
 
-\captura{Modulo OCSP}{Consulta de estado OCSP por numero de serie}
+\captura{modulo_ocsp}{Modulo OCSP}{Consulta de estado OCSP por numero de serie}
 
 \subsection{CA y CRL}
 
@@ -439,7 +443,7 @@ El sistema incluye una demostracion de handshake TLS 1.3 usando un certificado d
     \item Confirme que cliente y servidor reporten \texttt{TLSv1.3}.
 \end{enumerate}
 
-\captura{Modulo TLS 1.3}{Prueba de handshake TLS 1.3}
+\captura{modulo_tls13}{Modulo TLS 1.3}{Prueba de handshake TLS 1.3}
 
 \subsection{Auditoria}
 
@@ -457,7 +461,7 @@ La auditoria esta disponible para el administrador. Cada operacion criptografica
 
 El sistema verifica la cadena de hashes. Si una entrada se modifica o elimina, la auditoria deja de validar.
 
-\captura{Modulo de auditoria}{Registro inmutable con hash encadenado}
+\captura{modulo_auditoria}{Modulo de auditoria}{Registro inmutable con hash encadenado}
 
 \section{Flujo Recomendado de Demostracion}
 

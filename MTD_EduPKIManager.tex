@@ -50,15 +50,37 @@
     columns=fullflexible
 }
 
-\newcommand{\captura}[2]{
+\newcommand{\captura}[3]{
     \begin{figure}[H]
         \centering
-        \fbox{
-            \begin{minipage}[c][4.6cm][c]{0.88\textwidth}
-                \centering
-                \textbf{#1}\\[0.35cm]
-                \small Inserte aqui la captura correspondiente del sistema.
-            \end{minipage}
+        \IfFileExists{img_latex/#1.png}{
+            \includegraphics[width=0.92\textwidth,height=0.58\textheight,keepaspectratio]{img_latex/#1.png}
+        }{
+            \fbox{
+                \begin{minipage}[c][4.6cm][c]{0.88\textwidth}
+                    \centering
+                    \textbf{#2}\\[0.35cm]
+                    \small Falta la imagen: \texttt{img\_latex/#1.png}
+                \end{minipage}
+            }
+        }
+        \caption{#3}
+    \end{figure}
+}
+
+\newcommand{\diagrama}[2]{
+    \begin{figure}[H]
+        \centering
+        \IfFileExists{img_latex/#1.png}{
+            \includegraphics[width=0.96\textwidth,height=0.62\textheight,keepaspectratio]{img_latex/#1.png}
+        }{
+            \fbox{
+                \begin{minipage}[c][5cm][c]{0.88\textwidth}
+                    \centering
+                    \textbf{#2}\\[0.35cm]
+                    \small Falta la imagen: \texttt{img\_latex/#1.png}
+                \end{minipage}
+            }
         }
         \caption{#2}
     \end{figure}
@@ -156,165 +178,31 @@ RF-10 & Registro de auditoria inmutable de todas las operaciones criptograficas 
 
 La arquitectura se organiza en cuatro capas principales: presentacion, API, servicios criptograficos y persistencia/artefactos. El frontend consume la API REST y el backend delega las operaciones criptograficas en modulos especializados.
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    node distance=0.75cm,
-    comp/.style={draw=EduBorder, rounded corners, fill=EduLight, minimum width=5.7cm, minimum height=0.9cm, align=center, font=\small},
-    store/.style={draw=EduBorder, rounded corners, fill=EduGray, minimum width=5.7cm, minimum height=0.9cm, align=center, font=\small},
-    arrow/.style={-Latex, thick, color=EduGreen}
-]
-    \node[comp] (front) {Frontend React + TypeScript\\Roles admin/user};
-    \node[comp, below=of front] (api) {Django REST Framework\\Autenticacion, permisos y endpoints};
-    \node[comp, below left=1.1cm and 1.2cm of api] (crypto) {Servicios PKI\\CA, certificados, CRL, OCSP, PDF, TLS};
-    \node[store, below right=1.1cm and 1.2cm of api] (data) {Persistencia\\PostgreSQL, volumen CA, CRL, auditoria};
-    \node[comp, below=1.2cm of crypto] (nginx) {Nginx HTTPS\\TLS 1.3 para edupkimanager.com};
-    \node[comp, below=1.2cm of data] (scheduler) {Servicios auxiliares\\crl\_scheduler y tls\_init};
-
-    \draw[arrow] (front) -- (api);
-    \draw[arrow] (api) -- (crypto);
-    \draw[arrow] (api) -- (data);
-    \draw[arrow] (crypto) -- (data);
-    \draw[arrow] (nginx) -- (front);
-    \draw[arrow] (scheduler) -- (data);
-    \draw[arrow] (scheduler) -- (crypto);
-\end{tikzpicture}
-\caption{Diagrama de Componentes de EduPKIManager}
-\end{figure}
+\diagrama{diagrama_componentes_edupkimanager}{Diagrama de Componentes de EduPKIManager}
 
 \subsection{Diagrama de Modulos}
 
 El backend fue separado por responsabilidad. Cada modulo concentra una parte del dominio PKI para mantener la implementacion clara y verificable.
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    node distance=0.65cm,
-    module/.style={draw=EduBorder, rounded corners, fill=EduLight, minimum width=4.3cm, minimum height=0.8cm, align=center, font=\small},
-    arrow/.style={-Latex, thick, color=EduGreen}
-]
-    \node[module] (api) {api\\Vistas REST y permisos};
-    \node[module, below left=of api] (ca) {ca\\Root, Intermediate, X.509};
-    \node[module, below=of api] (validation) {validation\\Cadena, usos, CRL, OCSP};
-    \node[module, below right=of api] (audit) {audit\\Hash encadenado};
-    \node[module, below=of ca] (crl) {crl\\Publicacion PEM/DER};
-    \node[module, below=of validation] (ocsp) {ocsp\\JSON y RFC 6960};
-    \node[module, below=of audit] (pdf) {pdf\_sign\\Detached y PAdES};
-    \node[module, below=of ocsp] (tls) {tls\\Bundle servidor y TLS 1.3};
-
-    \draw[arrow] (api) -- (ca);
-    \draw[arrow] (api) -- (validation);
-    \draw[arrow] (api) -- (audit);
-    \draw[arrow] (ca) -- (crl);
-    \draw[arrow] (validation) -- (ocsp);
-    \draw[arrow] (validation) -- (pdf);
-    \draw[arrow] (ca) -- (tls);
-    \draw[arrow] (pdf) -- (audit);
-    \draw[arrow] (tls) -- (audit);
-\end{tikzpicture}
-\caption{Diagrama de Modulos del Backend}
-\end{figure}
+\diagrama{diagrama_modulos_backend}{Diagrama de Modulos del Backend}
 
 \subsection{Diagrama de Flujo: Emision de Certificado}
 
 La emision parte de una solicitud autenticada. Segun el rol, el backend valida permisos, genera la clave privada del certificado final, construye un certificado X.509 v3 y lo firma con la Intermediate CA.
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    node distance=0.75cm,
-    step/.style={draw=EduBorder, rounded corners, fill=EduLight, minimum width=8.8cm, minimum height=0.8cm, align=center, font=\small},
-    decision/.style={draw=EduBorder, diamond, aspect=2.2, fill=EduGray, align=center, font=\small},
-    arrow/.style={-Latex, thick, color=EduGreen}
-]
-    \node[step] (login) {Usuario autenticado envia solicitud};
-    \node[decision, below=of login] (role) {Rol valido?};
-    \node[step, below=of role] (ca) {Generar clave y certificado X.509 v3};
-    \node[step, below=of ca] (sign) {Firmar con Intermediate CA};
-    \node[step, below=of sign] (save) {Guardar registro en PostgreSQL};
-    \node[step, below=of save] (audit) {Registrar evento en auditoria};
-    \node[step, below=of audit] (response) {Responder certificado y clave privada};
-
-    \draw[arrow] (login) -- (role);
-    \draw[arrow] (role) -- node[right]{Si} (ca);
-    \draw[arrow] (ca) -- (sign);
-    \draw[arrow] (sign) -- (save);
-    \draw[arrow] (save) -- (audit);
-    \draw[arrow] (audit) -- (response);
-\end{tikzpicture}
-\caption{Diagrama de Flujo de Emision de Certificado}
-\end{figure}
+\diagrama{diagrama_flujo_emision_certificado}{Diagrama de Flujo de Emision de Certificado}
 
 \subsection{Diagrama de Flujo: Verificacion de Firma PDF}
 
 La verificacion de firma valida integridad del documento, validez criptografica de la firma, cadena Root/Intermediate, estado de revocacion y proposito de uso.
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    node distance=0.7cm,
-    step/.style={draw=EduBorder, rounded corners, fill=EduLight, minimum width=9.2cm, minimum height=0.8cm, align=center, font=\small},
-    arrow/.style={-Latex, thick, color=EduGreen}
-]
-    \node[step] (input) {Cargar PDF y firma JSON o PDF PAdES};
-    \node[step, below=of input] (hash) {Calcular SHA-256 del documento};
-    \node[step, below=of hash] (sig) {Verificar firma con clave publica del certificado};
-    \node[step, below=of sig] (chain) {Validar cadena Root CA -> Intermediate CA -> Certificado};
-    \node[step, below=of chain] (rev) {Consultar estado local, CRL y OCSP};
-    \node[step, below=of rev] (audit) {Registrar operacion y resultado};
-    \node[step, below=of audit] (result) {Mostrar reporte de trazabilidad};
-
-    \draw[arrow] (input) -- (hash);
-    \draw[arrow] (hash) -- (sig);
-    \draw[arrow] (sig) -- (chain);
-    \draw[arrow] (chain) -- (rev);
-    \draw[arrow] (rev) -- (audit);
-    \draw[arrow] (audit) -- (result);
-\end{tikzpicture}
-\caption{Diagrama de Flujo de Verificacion de Firma PDF}
-\end{figure}
+\diagrama{diagrama_flujo_verificacion_pdf}{Diagrama de Flujo de Verificacion de Firma PDF}
 
 \subsection{Diagrama de Secuencia: Handshake TLS 1.3}
 
 El despliegue Docker genera un certificado de servidor para \texttt{edupkimanager.com}. Nginx sirve el frontend por HTTPS restringido a TLS 1.3 usando dicho certificado.
 
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    lifeline/.style={draw=EduBorder, fill=EduLight, minimum width=2.8cm, minimum height=0.65cm, align=center, font=\small},
-    msg/.style={-Latex, thick, color=EduGreen},
-    every node/.style={font=\small}
-]
-    \node[lifeline] (client) at (0,0) {Cliente};
-    \node[lifeline] (nginx) at (4,0) {Nginx};
-    \node[lifeline] (ca) at (8,0) {CA propia};
-
-    \draw[dashed] (client) -- (0,-5.4);
-    \draw[dashed] (nginx) -- (4,-5.4);
-    \draw[dashed] (ca) -- (8,-5.4);
-
-    \coordinate (ca1) at (8,-0.8);
-    \coordinate (ng1) at (4,-0.8);
-    \coordinate (cl2) at (0,-1.6);
-    \coordinate (ng2) at (4,-1.6);
-    \coordinate (ng3) at (4,-2.4);
-    \coordinate (cl3) at (0,-2.4);
-    \coordinate (cl4) at (0,-3.2);
-    \coordinate (ca4) at (8,-3.2);
-    \coordinate (cl5) at (0,-4.0);
-    \coordinate (ng5) at (4,-4.0);
-    \coordinate (ng6) at (4,-4.8);
-    \coordinate (cl6) at (0,-4.8);
-
-    \draw[msg] (ca1) -- node[above]{emite certificado servidor} (ng1);
-    \draw[msg] (cl2) -- node[above]{ClientHello TLS 1.3} (ng2);
-    \draw[msg] (ng3) -- node[above]{ServerHello + certificado} (cl3);
-    \draw[msg] (cl4) -- node[above]{valida Root CA confiable} (ca4);
-    \draw[msg] (cl5) -- node[above]{claves de sesion} (ng5);
-    \draw[msg] (ng6) -- node[above]{canal HTTPS TLS 1.3} (cl6);
-\end{tikzpicture}
-\caption{Diagrama de Secuencia de Handshake TLS 1.3}
-\end{figure}
+\diagrama{diagrama_secuencia_tls13}{Diagrama de Secuencia de Handshake TLS 1.3}
 
 \section{Implementacion}
 
@@ -482,25 +370,25 @@ Endpoint & Descripcion \\
 
 La pantalla de login separa el acceso por credenciales demo. Despues de autenticar, el frontend conserva el token y habilita las vistas de acuerdo con el rol.
 
-\captura{Login de EduPKIManager}{Interfaz de inicio de sesion}
+\captura{login_edupkimanager}{Login de EduPKIManager}{Interfaz de inicio de sesion}
 
 \subsection{Panel Administrador}
 
 El panel administrador ofrece gestion completa del ciclo de vida: emision, listado, renovacion, suspension y revocacion. Tambien permite descargar artefactos y operar funciones avanzadas de PKI.
 
-\captura{Panel administrador}{Interfaz de gestion completa de certificados}
+\captura{panel_administrador}{Panel administrador}{Interfaz de gestion completa de certificados}
 
 \subsection{Portal Usuario Final}
 
 El portal usuario final reduce el alcance a certificados propios. Desde esta vista se puede solicitar un certificado personal, ver su estado, descargarlo y utilizarlo para operaciones de firma y validacion.
 
-\captura{Portal de usuario}{Interfaz del usuario final}
+\captura{portal_usuario}{Portal de usuario}{Interfaz del usuario final}
 
 \subsection{Operaciones PKI}
 
 La vista de operaciones agrupa herramientas de firma PDF, verificacion PDF, confianza X.509, OCSP, CA/CRL, TLS 1.3 y auditoria.
 
-\captura{Operaciones PKI}{Interfaz de herramientas criptograficas}
+\captura{operaciones_pki}{Operaciones PKI}{Interfaz de herramientas criptograficas}
 
 \section{Despliegue}
 
