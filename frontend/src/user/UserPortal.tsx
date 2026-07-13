@@ -1,5 +1,7 @@
 import { Download, RefreshCw, UserRound } from "lucide-react";
 import type { CertificateRecord } from "../api/client";
+import { Pagination, usePagination } from "../components/Pagination";
+import { downloadCertificate } from "../utils/certificates";
 
 type Props = {
   certificates: CertificateRecord[];
@@ -8,15 +10,7 @@ type Props = {
 };
 
 export function UserPortal({ certificates, owner, onRefresh }: Props) {
-  function downloadCertificate(certificate: CertificateRecord) {
-    const blob = new Blob([certificate.certificate_pem], { type: "application/x-pem-file" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${certificate.common_name}.crt.pem`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
+  const { currentPage, pageItems, setCurrentPage, totalPages } = usePagination(certificates, 4);
 
   return (
     <section className="panel">
@@ -33,11 +27,11 @@ export function UserPortal({ certificates, owner, onRefresh }: Props) {
       </div>
       {certificates.length > 0 && (
         <div className="auditList">
-          {certificates.map((certificate) => (
+          {pageItems.map((certificate) => (
             <div className="auditItem" key={certificate.serial_number}>
               <strong>{certificate.common_name}</strong>
               <span>{certificate.status} / {certificate.certificate_type}</span>
-              <small>{certificate.serial_number}</small>
+              <small><b>Numero de serie:</b> {certificate.serial_number}</small>
               <button className="secondary" onClick={() => downloadCertificate(certificate)}>
                 <Download size={16} />
                 Descargar
@@ -46,6 +40,12 @@ export function UserPortal({ certificates, owner, onRefresh }: Props) {
           ))}
         </div>
       )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={certificates.length}
+        onPageChange={setCurrentPage}
+      />
       {!certificates.length && (
         <div className="emptyState">
           <strong>Sin certificados asignados</strong>

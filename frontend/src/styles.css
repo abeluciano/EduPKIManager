@@ -235,6 +235,70 @@ h2 {
   overflow-x: auto;
 }
 
+.certificateDetailsRow td {
+  background: #f8fbfa;
+  padding: 0;
+}
+
+.certificateDetails {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(220px, 1.3fr) minmax(260px, 2fr) minmax(180px, 1fr);
+  margin: 0;
+  padding: 16px;
+}
+
+.certificateDetails div {
+  min-width: 0;
+}
+
+.certificateDetails dt {
+  color: #53646c;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.certificateDetails dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.pagination {
+  align-items: center;
+  color: #5d6b72;
+  display: flex;
+  font-size: 13px;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.paginationControls {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.paginationControls strong {
+  color: #263842;
+  min-width: 112px;
+  text-align: center;
+}
+
+.paginationControls button {
+  align-items: center;
+  background: #eef4f2;
+  border: 0;
+  border-radius: 6px;
+  color: #263842;
+  cursor: pointer;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
 table {
   border-collapse: collapse;
   min-width: 780px;
@@ -562,6 +626,10 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .certificateDetails {
+    grid-template-columns: 1fr;
+  }
+
   .primary {
     justify-content: center;
   }
@@ -597,6 +665,16 @@ textarea {
   .buttonRow {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .pagination {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .paginationControls {
+    justify-content: space-between;
   }
 
   .secondary {

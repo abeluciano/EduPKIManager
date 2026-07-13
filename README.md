@@ -105,8 +105,8 @@ El login emite un token firmado que el frontend envia como `Authorization: Beare
 
 - Rol `admin`: ve `Administracion` y `Operaciones PKI`.
 - Rol `user`: ve `Mi portal` y `Firmas PDF`.
-- `Administracion`: emision para uno de los cinco propietarios definidos, listado, renovacion, suspension y revocacion de certificados.
-- `Mi portal`: listado, estado y descarga de certificados emitidos por el administrador para el propietario autenticado.
+- `Administracion`: emision para uno de los cinco propietarios definidos, listado paginado, consulta de numero de serie y huella, descarga, renovacion, suspension y revocacion de certificados.
+- `Mi portal`: listado paginado, numero de serie, estado y descarga de certificados emitidos por el administrador para el propietario autenticado.
 - `Operaciones PKI`: para administradores incluye firma/verificacion PDF, consulta OCSP, validacion X.509, descarga de Root CA/CRL, demo TLS 1.3 y auditoria verificable.
 - `Firmas PDF`: para usuarios finales incluye solo firma y verificacion PDF.
 

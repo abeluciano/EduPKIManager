@@ -1,8 +1,10 @@
-import { Ban, CirclePause, RefreshCw, Send, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { Ban, CirclePause, Download, Eye, RefreshCw, Send, ShieldCheck } from "lucide-react";
+import { Fragment, useState } from "react";
 import type { FormEvent } from "react";
 import type { CertificateRecord } from "../api/client";
 import { OWNER_ACCOUNTS, certificateAction, issueCertificate } from "../api/client";
+import { Pagination, usePagination } from "../components/Pagination";
+import { downloadCertificate } from "../utils/certificates";
 
 type Props = {
   certificates: CertificateRecord[];
@@ -14,6 +16,8 @@ export function AdminPanel({ certificates, onChanged }: Props) {
   const [type, setType] = useState("server");
   const [owner, setOwner] = useState<string>(OWNER_ACCOUNTS[0].displayName);
   const [busy, setBusy] = useState(false);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const { currentPage, pageItems, setCurrentPage, totalPages } = usePagination(certificates, 8);
 
   async function runAction(id: number, action: "revoke" | "suspend" | "renew") {
     await certificateAction(id, action);
@@ -84,23 +88,67 @@ export function AdminPanel({ certificates, onChanged }: Props) {
             </tr>
           </thead>
           <tbody>
-            {certificates.map((item) => (
-              <tr key={item.id}>
-                <td>{item.common_name}</td>
-                <td>{item.owner}</td>
-                <td>{item.certificate_type}</td>
-                <td><span className={`status ${item.status}`}>{item.status}</span></td>
-                <td>{new Date(item.not_after).toLocaleDateString()}</td>
-                <td className="actions">
-                  <button title="Renovar" onClick={() => runAction(item.id, "renew")}><RefreshCw size={16} /></button>
-                  <button title="Suspender" onClick={() => runAction(item.id, "suspend")}><CirclePause size={16} /></button>
-                  <button title="Revocar" onClick={() => runAction(item.id, "revoke")}><Ban size={16} /></button>
-                </td>
-              </tr>
+            {pageItems.map((item) => (
+              <Fragment key={item.id}>
+                <tr>
+                  <td>{item.common_name}</td>
+                  <td>{item.owner}</td>
+                  <td>{item.certificate_type}</td>
+                  <td><span className={`status ${item.status}`}>{item.status}</span></td>
+                  <td>{new Date(item.not_after).toLocaleDateString()}</td>
+                  <td className="actions">
+                    <button
+                      type="button"
+                      title="Ver detalles"
+                      aria-label={`Ver detalles de ${item.common_name}`}
+                      aria-expanded={expandedId === item.id}
+                      onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                    ><Eye size={16} /></button>
+                    <button
+                      type="button"
+                      title="Descargar certificado"
+                      aria-label={`Descargar certificado ${item.common_name}`}
+                      onClick={() => downloadCertificate(item)}
+                    ><Download size={16} /></button>
+                    <button type="button" title="Renovar" aria-label={`Renovar ${item.common_name}`} onClick={() => runAction(item.id, "renew")}><RefreshCw size={16} /></button>
+                    <button type="button" title="Suspender" aria-label={`Suspender ${item.common_name}`} onClick={() => runAction(item.id, "suspend")}><CirclePause size={16} /></button>
+                    <button type="button" title="Revocar" aria-label={`Revocar ${item.common_name}`} onClick={() => runAction(item.id, "revoke")}><Ban size={16} /></button>
+                  </td>
+                </tr>
+                {expandedId === item.id && (
+                  <tr className="certificateDetailsRow">
+                    <td colSpan={6}>
+                      <dl className="certificateDetails">
+                        <div>
+                          <dt>Numero de serie</dt>
+                          <dd>{item.serial_number}</dd>
+                        </div>
+                        <div>
+                          <dt>Huella SHA-256</dt>
+                          <dd>{item.fingerprint_sha256}</dd>
+                        </div>
+                        <div>
+                          <dt>Valido hasta</dt>
+                          <dd>{new Date(item.not_after).toLocaleString()}</dd>
+                        </div>
+                      </dl>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
       </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={certificates.length}
+        onPageChange={(page) => {
+          setExpandedId(null);
+          setCurrentPage(page);
+        }}
+      />
     </section>
   );
 }
