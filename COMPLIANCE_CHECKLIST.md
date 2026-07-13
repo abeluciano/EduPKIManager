@@ -17,8 +17,8 @@
 | Verificacion de firma y trazabilidad de cadena | Cumplido | `POST /api/pdf/verify/`, `POST /api/pdf/verify-embedded/`, `POST /api/certificates/validate/`, valida firma, integridad, cadena Root/Intermediate, vigencia, usos permitidos, politicas, CRL, OCSP y estado local |
 | Handshake TLS 1.3 con certificado emitido por CA propia | Cumplido | `https://edupkimanager.com`, Nginx `ssl_protocols TLSv1.3`, servicio `tls_init`, `GET /api/tls/demo/`, `backend/scripts/tls13_demo.py`, `backend/scripts/verify_https_tls.py` |
 | Panel web administrador | Cumplido | Login admin, listado completo, emision con propietario, renovacion, suspension y revocacion en `frontend/src/admin/AdminPanel.tsx` |
-| Panel web usuario final | Cumplido | Login usuario, solicitud de certificados personales, listado propio, descarga y estado de certificado en `frontend/src/user/UserPortal.tsx` |
-| Operaciones PKI en frontend | Cumplido | Firma/verificacion PDF, OCSP, Root CA, CRL, TLS y auditoria en `frontend/src/tools/PkiTools.tsx` |
+| Panel web usuario final | Cumplido | Login de cinco propietarios fijos, listado propio, descarga y estado de certificados emitidos por administrador en `frontend/src/user/UserPortal.tsx` |
+| Operaciones PKI en frontend | Cumplido | Administrador: firma/verificacion PDF, OCSP, Root CA, CRL, confianza X.509, TLS y auditoria. Usuario final: solo firma/verificacion PDF con certificados propios en `frontend/src/tools/PkiTools.tsx` |
 | Autenticacion con roles | Cumplido | `POST /api/auth/login/`, token firmado, permisos admin/user, ownership de certificados y bloqueo de acceso cruzado en `backend/api/views.py` |
 | Auditoria inmutable | Cumplido | `backend/audit/service.py`, secuencia, hash encadenado, reporte de verificacion, deteccion de manipulacion, `GET /api/audit/`, eventos de CA, CRL, OCSP, certificados, PDF y TLS |
 | Configuracion externalizada para despliegue | Cumplido | `.env.example`, `docker-compose.yml` con variables, `backend/scripts/check_deployment_config.py`, `DEPLOYMENT_RUNBOOK.md` |

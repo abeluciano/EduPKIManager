@@ -127,7 +127,7 @@ El sistema cuenta con dos experiencias de uso:
 
 \begin{itemize}[leftmargin=*]
     \item \textbf{Administrador:} gestiona todos los certificados, opera la CA, revisa auditoria y ejecuta pruebas TLS.
-    \item \textbf{Usuario final:} solicita certificados personales, firma documentos y valida certificados o firmas propias.
+    \item \textbf{Usuario final:} consulta certificados emitidos a su propietario por el administrador, firma documentos y verifica firmas PDF.
 \end{itemize}
 
 \section{Acceso al Sistema}
@@ -193,7 +193,11 @@ Luego abra el navegador en una de las siguientes direcciones:
 Rol & Credencial & Uso principal \\
 \midrule
 Administrador & \texttt{admin / admin123} & Gestion completa de certificados, auditoria, TLS y operaciones administrativas. \\
-Usuario final & \texttt{user / user123} & Solicitud de certificados personales, firma PDF y validacion de confianza. \\
+Universidad la Salle & \texttt{lasalle / lasalle123} & Consulta de certificados asignados, descarga, firma PDF y verificacion PDF. \\
+Abel Aragon & \texttt{abel.aragon / abel123} & Consulta de certificados asignados, descarga, firma PDF y verificacion PDF. \\
+Carlos Mijail & \texttt{carlos.mijail / carlos123} & Consulta de certificados asignados, descarga, firma PDF y verificacion PDF. \\
+Josshua Flores & \texttt{josshua.flores / josshua123} & Consulta de certificados asignados, descarga, firma PDF y verificacion PDF. \\
+Marco Alatrista & \texttt{marco.alatrista / marco123} & Consulta de certificados asignados, descarga, firma PDF y verificacion PDF. \\
 \bottomrule
 \end{longtable}
 
@@ -213,7 +217,7 @@ La barra superior muestra el nombre EduPKIManager, el subtitulo de la consola y 
 
 \begin{itemize}[leftmargin=*]
     \item Si el rol es \textbf{admin}, aparecen las vistas \textit{Administracion} y \textit{Operaciones PKI}.
-    \item Si el rol es \textbf{user}, aparecen las vistas \textit{Mi portal} y \textit{Firmas y validacion}.
+    \item Si el rol es \textbf{user}, aparecen las vistas \textit{Mi portal} y \textit{Firmas PDF}.
     \item El boton de salida permite cerrar la sesion actual y volver al login.
 \end{itemize}
 
@@ -309,23 +313,23 @@ La revocacion invalida el certificado y lo incluye en la CRL. Debe usarse cuando
 
 \subsection{Descripcion}
 
-El portal de usuario final esta orientado a operaciones personales. El usuario puede solicitar certificados propios, descargarlos, consultar su estado, firmar documentos y validar certificados o firmas.
+El portal de usuario final esta orientado a consulta y uso de certificados asignados. El usuario no emite certificados; solo puede ver, descargar y usar los certificados que el administrador emitio para su propietario.
 
 \captura{portal_usuario_final}{Portal de usuario final}{Vista Mi portal para usuario final}
 
-\subsection{Solicitar Certificado Personal}
+\subsection{Consultar Certificados Asignados}
 
-Para solicitar un certificado:
+Para revisar certificados asignados:
 
 \begin{enumerate}[leftmargin=*]
-    \item Inicie sesion con el usuario \texttt{user}.
+    \item Inicie sesion con alguno de los cinco usuarios finales definidos.
     \item Ingrese a \textit{Mi portal}.
-    \item Escriba el Common Name del certificado, por ejemplo \texttt{student.edu.local}.
-    \item Presione el boton de solicitud.
-    \item Verifique que el certificado aparezca en la lista de certificados propios.
+    \item Revise la lista de certificados emitidos por el administrador para ese propietario.
+    \item Descargue el certificado si necesita usarlo como evidencia o validarlo externamente.
+    \item Use el boton \textit{Actualizar} para refrescar el listado.
 \end{enumerate}
 
-\nota{El usuario final solo puede emitir certificados de tipo usuario y solo puede operar sobre certificados cuyo propietario coincida con su cuenta.}
+\nota{El usuario final no puede emitir, renovar, suspender ni revocar certificados. Tampoco ve en su frontend los modulos de confianza X.509, OCSP, CA/CRL, TLS o auditoria.}
 
 \subsection{Descargar Certificado Propio}
 
@@ -349,7 +353,7 @@ EduPKIManager permite firmar documentos PDF mediante certificados emitidos por l
 Proceso general:
 
 \begin{enumerate}[leftmargin=*]
-    \item Ingrese a \textit{Operaciones PKI} o \textit{Firmas y validacion}.
+    \item Ingrese a \textit{Operaciones PKI} como administrador o \textit{Firmas PDF} como usuario final.
     \item Seleccione un certificado activo.
     \item Cargue el archivo PDF.
     \item Presione \textit{Firmar JSON} o \textit{Firmar PAdES}.
@@ -469,7 +473,7 @@ Para una demostracion completa se recomienda el siguiente recorrido:
 
 \begin{enumerate}[leftmargin=*]
     \item Iniciar sesion como administrador.
-    \item Emitir un certificado de usuario.
+    \item Emitir un certificado de usuario para uno de los cinco propietarios definidos.
     \item Emitir un certificado de servidor para \texttt{edupkimanager.com}.
     \item Firmar un PDF con un certificado activo.
     \item Verificar la firma del PDF.

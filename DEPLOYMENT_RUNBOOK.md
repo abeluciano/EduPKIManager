@@ -16,7 +16,6 @@ Valores obligatorios para un despliegue serio:
 | `CA_KEY_PASSWORD` | Cifrado de claves privadas de la CA |
 | `DJANGO_SECRET_KEY` | Firma interna de Django y tokens demo |
 | `EDUPKI_ADMIN_PASSWORD` | Password del usuario administrador demo |
-| `EDUPKI_USER_PASSWORD` | Password del usuario final demo |
 | `DJANGO_DEBUG` | Debe ser `0` fuera de demo |
 | `DJANGO_ALLOWED_HOSTS` | Hosts permitidos por Django |
 | `CORS_ALLOWED_ORIGINS` | Origenes permitidos del frontend |

@@ -225,7 +225,7 @@ EduPKIManager/
     src/
       admin/      # Panel administrador
       user/       # Portal usuario final
-      tools/      # Firma, OCSP, CRL, TLS y auditoria
+      tools/      # Firma PDF para usuarios; OCSP, CRL, TLS y auditoria para admin
   scripts/
     setup_windows_tls.ps1
   docker-compose.yml
@@ -380,13 +380,13 @@ El panel administrador ofrece gestion completa del ciclo de vida: emision, lista
 
 \subsection{Portal Usuario Final}
 
-El portal usuario final reduce el alcance a certificados propios. Desde esta vista se puede solicitar un certificado personal, ver su estado, descargarlo y utilizarlo para operaciones de firma y validacion.
+El portal usuario final reduce el alcance a certificados propios emitidos por el administrador. Desde esta vista se puede ver el estado, descargar certificados asignados y utilizarlos para operaciones de firma y verificacion PDF.
 
 \captura{portal_usuario}{Portal de usuario}{Interfaz del usuario final}
 
 \subsection{Operaciones PKI}
 
-La vista de operaciones agrupa herramientas de firma PDF, verificacion PDF, confianza X.509, OCSP, CA/CRL, TLS 1.3 y auditoria.
+La vista de operaciones agrupa herramientas segun rol. El administrador accede a firma PDF, verificacion PDF, confianza X.509, OCSP, CA/CRL, TLS 1.3 y auditoria. El usuario final accede solo a firma y verificacion PDF.
 
 \captura{operaciones_pki}{Operaciones PKI}{Interfaz de herramientas criptograficas}
 

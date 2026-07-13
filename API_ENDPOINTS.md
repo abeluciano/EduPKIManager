@@ -124,7 +124,11 @@ Autentica un usuario demo y devuelve un token firmado para las operaciones prote
 Usuarios demo:
 
 - `admin` / `admin123`, rol `admin`
-- `user` / `user123`, rol `user`
+- `lasalle` / `lasalle123`, rol `user`, propietario `Universidad la Salle`
+- `abel.aragon` / `abel123`, rol `user`, propietario `Abel Aragon`
+- `carlos.mijail` / `carlos123`, rol `user`, propietario `Carlos Mijail`
+- `josshua.flores` / `josshua123`, rol `user`, propietario `Josshua Flores`
+- `marco.alatrista` / `marco123`, rol `user`, propietario `Marco Alatrista`
 
 Body:
 
@@ -148,9 +152,29 @@ Respuesta `200`:
 ```json
 {
   "actor": "admin",
+  "display_name": "Administrador",
   "role": "admin",
-  "token": "eyJ..."
+  "token": "eyJ...",
+  "username": "admin"
 }
+```
+
+### `GET /owners/`
+
+Lista los cinco propietarios habilitados para emision desde el panel administrador.
+
+Requiere rol `admin`.
+
+Respuesta `200`:
+
+```json
+[
+  { "name": "Universidad la Salle" },
+  { "name": "Abel Aragon" },
+  { "name": "Carlos Mijail" },
+  { "name": "Josshua Flores" },
+  { "name": "Marco Alatrista" }
+]
 ```
 
 ## Root CA
@@ -232,7 +256,7 @@ Respuesta `200`:
     "serial_number": "123456789",
     "common_name": "portal.edu.local",
     "certificate_type": "server",
-    "owner": "admin",
+    "owner": "Universidad la Salle",
     "status": "issued",
     "certificate_pem": "-----BEGIN CERTIFICATE-----...",
     "fingerprint_sha256": "abc123...",
@@ -248,7 +272,7 @@ Respuesta `200`:
 
 Emite un nuevo certificado X.509 v3. La respuesta incluye la clave privada del certificado emitido.
 
-Requiere rol `admin` o `user`.
+Requiere rol `admin`.
 
 Body:
 
@@ -256,7 +280,7 @@ Body:
 {
   "common_name": "portal.edu.local",
   "certificate_type": "server",
-  "owner": "admin",
+  "owner": "Universidad la Salle",
   "organization": "EduPKIManager",
   "organizational_unit": "Education PKI",
   "country": "PE",
@@ -273,7 +297,7 @@ Campos requeridos:
 Campos opcionales:
 
 - `certificate_type`: default `user`
-- `owner`: default actor autenticado; solo `admin` puede emitir para otro propietario
+- `owner`: uno de `Universidad la Salle`, `Abel Aragon`, `Carlos Mijail`, `Josshua Flores`, `Marco Alatrista`; si se omite usa `Universidad la Salle`
 - `organization`: default `EduPKIManager`
 - `organizational_unit`: default `Education PKI`
 - `country`: default `PE`
@@ -287,14 +311,14 @@ Ejemplo:
 curl -X POST http://127.0.0.1:8000/api/certificates/ \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <admin_token>" \
-  -d '{"common_name":"portal.edu.local","certificate_type":"server","owner":"admin","sans":["portal.edu.local","127.0.0.1"],"validity_days":365}'
+  -d '{"common_name":"portal.edu.local","certificate_type":"server","owner":"Universidad la Salle","sans":["portal.edu.local","127.0.0.1"],"validity_days":365}'
 ```
 
 Restricciones por rol:
 
 - `admin` puede emitir certificados `user`, `server` y `device`.
-- `user` solo puede emitir certificados `user`; si solicita `server` o `device`, recibe `403`.
-- Los certificados emitidos por `user` quedan con `owner` igual al actor autenticado.
+- `user` no puede emitir certificados; solo puede listar, descargar, firmar y verificar con certificados emitidos para su propietario.
+- Si `owner` no pertenece a los cinco propietarios definidos, responde `400`.
 
 Respuesta `201`:
 
@@ -304,7 +328,7 @@ Respuesta `201`:
   "serial_number": "123456789",
   "common_name": "portal.edu.local",
   "certificate_type": "server",
-  "owner": "admin",
+  "owner": "Universidad la Salle",
   "status": "issued",
   "certificate_pem": "-----BEGIN CERTIFICATE-----...",
   "private_key_pem": "-----BEGIN PRIVATE KEY-----...",

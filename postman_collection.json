@@ -28,13 +28,13 @@
       }
     },
     {
-      "name": "Login User",
+      "name": "Login Abel Aragon",
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const data = pm.response.json();", "pm.collectionVariables.set('user_token', data.token);"] } }],
       "request": {
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "url": "{{base_url}}/auth/login/",
-        "body": { "mode": "raw", "raw": "{\"username\":\"user\",\"password\":\"user123\"}" }
+        "body": { "mode": "raw", "raw": "{\"username\":\"abel.aragon\",\"password\":\"abel123\"}" }
       }
     },
     { "name": "Root CA", "request": { "method": "GET", "url": "{{base_url}}/ca/root/" } },
@@ -47,7 +47,7 @@
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
         "url": "{{base_url}}/certificates/",
-        "body": { "mode": "raw", "raw": "{\"common_name\":\"portal.edu.local\",\"certificate_type\":\"server\",\"owner\":\"admin\",\"sans\":[\"portal.edu.local\",\"127.0.0.1\"],\"validity_days\":365}" }
+        "body": { "mode": "raw", "raw": "{\"common_name\":\"portal.edu.local\",\"certificate_type\":\"server\",\"owner\":\"Universidad la Salle\",\"sans\":[\"portal.edu.local\",\"127.0.0.1\"],\"validity_days\":365}" }
       }
     },
     {
@@ -68,13 +68,13 @@
       }
     },
     {
-      "name": "Emit User Certificate",
+      "name": "Emit User Certificate For Abel",
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const data = pm.response.json();", "pm.collectionVariables.set('serial_number', data.serial_number);"] } }],
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{user_token}}" }],
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
         "url": "{{base_url}}/certificates/",
-        "body": { "mode": "raw", "raw": "{\"common_name\":\"student.edu.local\",\"certificate_type\":\"user\",\"sans\":[\"student.edu.local\"],\"validity_days\":365}" }
+        "body": { "mode": "raw", "raw": "{\"common_name\":\"student.edu.local\",\"certificate_type\":\"user\",\"owner\":\"Abel Aragon\",\"sans\":[\"student.edu.local\"],\"validity_days\":365}" }
       }
     },
     {

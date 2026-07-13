@@ -93,17 +93,22 @@ http://edupkimanager.com
 Usuarios demo:
 
 - Administrador: `admin` / `admin123`
-- Usuario final: `user` / `user123`
+- Universidad la Salle: `lasalle` / `lasalle123`
+- Abel Aragon: `abel.aragon` / `abel123`
+- Carlos Mijail: `carlos.mijail` / `carlos123`
+- Josshua Flores: `josshua.flores` / `josshua123`
+- Marco Alatrista: `marco.alatrista` / `marco123`
 
-El login emite un token firmado que el frontend envia como `Authorization: Bearer <token>`. Las acciones de administracion requieren rol `admin`; los certificados guardan `owner`; el rol `user` solo lista, consulta y firma con certificados propios, y solo puede solicitar certificados de tipo `user`.
+El login emite un token firmado que el frontend envia como `Authorization: Bearer <token>`. Las acciones de administracion requieren rol `admin`; los certificados guardan `owner`; los cinco usuarios finales solo listan, descargan, firman y verifican PDFs con certificados emitidos para su propietario por el administrador.
 
 ## Panel Web
 
 - Rol `admin`: ve `Administracion` y `Operaciones PKI`.
-- Rol `user`: ve `Mi portal` y `Firmas y validacion`.
-- `Administracion`: emision, listado, renovacion, suspension y revocacion de certificados.
-- `Mi portal`: solicitud de certificado personal, descarga, consulta de estado y listado de certificados propios.
-- `Operaciones PKI`: firma/verificacion PDF, consulta OCSP, validacion X.509, descarga de Root CA/CRL, demo TLS 1.3 y auditoria verificable para administradores.
+- Rol `user`: ve `Mi portal` y `Firmas PDF`.
+- `Administracion`: emision para uno de los cinco propietarios definidos, listado, renovacion, suspension y revocacion de certificados.
+- `Mi portal`: listado, estado y descarga de certificados emitidos por el administrador para el propietario autenticado.
+- `Operaciones PKI`: para administradores incluye firma/verificacion PDF, consulta OCSP, validacion X.509, descarga de Root CA/CRL, demo TLS 1.3 y auditoria verificable.
+- `Firmas PDF`: para usuarios finales incluye solo firma y verificacion PDF.
 
 Las operaciones de firma permiten dos formatos de PDF:
 
