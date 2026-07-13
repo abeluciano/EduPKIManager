@@ -497,6 +497,32 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+.portalSummary,
+.emptyState {
+  background: #f4f8f7;
+  border: 1px solid #e2ece9;
+  border-radius: 8px;
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.portalSummary {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.portalSummary span,
+.emptyState span {
+  color: #5d6b72;
+}
+
+.emptyState {
+  display: grid;
+  gap: 5px;
+}
+
 @media (max-width: 980px) {
   main {
     padding: 20px;

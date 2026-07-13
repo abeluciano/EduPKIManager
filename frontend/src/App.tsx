@@ -12,7 +12,6 @@ type AppView = "admin" | "user" | "tools";
 export function App() {
   const [session, setSession] = useState<AuthSession | undefined>(() => getStoredSession());
   const [certificates, setCertificates] = useState<CertificateRecord[]>([]);
-  const [issued, setIssued] = useState<CertificateRecord>();
   const [view, setView] = useState<AppView>(session?.role === "admin" ? "admin" : "user");
 
   async function refresh() {
@@ -34,7 +33,7 @@ export function App() {
   const revoked = certificates.filter((item: CertificateRecord) => item.status === "revoked").length;
   const isAdmin = session.role === "admin";
   const primaryViewLabel = isAdmin ? "Administracion" : "Mi portal";
-  const operationsLabel = isAdmin ? "Operaciones PKI" : "Firmas y validacion";
+  const operationsLabel = isAdmin ? "Operaciones PKI" : "Firmas PDF";
 
   return (
     <main>
@@ -81,11 +80,11 @@ export function App() {
       </section>
 
       {view === "tools" ? (
-        <PkiTools certificates={certificates} issued={issued} role={session.role} />
+        <PkiTools certificates={certificates} role={session.role} />
       ) : isAdmin ? (
         <AdminPanel certificates={certificates} onChanged={refresh} />
       ) : (
-        <UserPortal certificates={certificates} issued={issued} onIssued={(certificate) => { setIssued(certificate); refresh(); }} />
+        <UserPortal certificates={certificates} owner={session.actor} onRefresh={refresh} />
       )}
     </main>
   );

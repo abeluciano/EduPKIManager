@@ -2,7 +2,7 @@ import { Ban, CirclePause, RefreshCw, Send, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import type { CertificateRecord } from "../api/client";
-import { certificateAction, issueCertificate } from "../api/client";
+import { OWNER_ACCOUNTS, certificateAction, issueCertificate } from "../api/client";
 
 type Props = {
   certificates: CertificateRecord[];
@@ -12,7 +12,7 @@ type Props = {
 export function AdminPanel({ certificates, onChanged }: Props) {
   const [commonName, setCommonName] = useState("portal.edu.local");
   const [type, setType] = useState("server");
-  const [owner, setOwner] = useState("admin");
+  const [owner, setOwner] = useState<string>(OWNER_ACCOUNTS[0].displayName);
   const [busy, setBusy] = useState(false);
 
   async function runAction(id: number, action: "revoke" | "suspend" | "renew") {
@@ -58,7 +58,13 @@ export function AdminPanel({ certificates, onChanged }: Props) {
         </label>
         <label>
           Propietario
-          <input value={owner} onChange={(event) => setOwner(event.target.value)} />
+          <select value={owner} onChange={(event) => setOwner(event.target.value)}>
+            {OWNER_ACCOUNTS.map((account) => (
+              <option key={account.username} value={account.displayName}>
+                {account.displayName}
+              </option>
+            ))}
+          </select>
         </label>
         <button className="primary" disabled={busy}>
           <Send size={16} />
@@ -70,7 +76,7 @@ export function AdminPanel({ certificates, onChanged }: Props) {
           <thead>
             <tr>
               <th>CN</th>
-              <th>Owner</th>
+              <th>Propietario</th>
               <th>Tipo</th>
               <th>Estado</th>
               <th>Vence</th>

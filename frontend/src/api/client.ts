@@ -13,9 +13,19 @@ export type CertificateRecord = {
 
 export type AuthSession = {
   actor: string;
+  display_name: string;
   role: "admin" | "user";
   token: string;
+  username: string;
 };
+
+export const OWNER_ACCOUNTS = [
+  { username: "lasalle", displayName: "Universidad la Salle" },
+  { username: "abel.aragon", displayName: "Abel Aragon" },
+  { username: "carlos.mijail", displayName: "Carlos Mijail" },
+  { username: "josshua.flores", displayName: "Josshua Flores" },
+  { username: "marco.alatrista", displayName: "Marco Alatrista" },
+] as const;
 
 export type RootCaResponse = {
   certificate_pem: string;

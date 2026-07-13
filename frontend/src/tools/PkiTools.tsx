@@ -6,18 +6,16 @@ import { apiUrl, checkOcsp, getAuditLog, getCrlManifest, getRootCa, runTlsDemo, 
 
 type Props = {
   certificates: CertificateRecord[];
-  issued?: CertificateRecord;
   role: "admin" | "user";
 };
 
-export function PkiTools({ certificates, issued, role }: Props) {
+export function PkiTools({ certificates, role }: Props) {
   const availableCertificates = useMemo(() => {
-    const values = issued ? [issued, ...certificates] : certificates;
-    const bySerial = new Map(values.map((item) => [item.serial_number, item]));
+    const bySerial = new Map(certificates.map((item) => [item.serial_number, item]));
     return [...bySerial.values()];
-  }, [certificates, issued]);
+  }, [certificates]);
 
-  const defaultSerial = issued?.serial_number ?? availableCertificates[0]?.serial_number ?? "";
+  const defaultSerial = availableCertificates[0]?.serial_number ?? "";
   const [serialNumber, setSerialNumber] = useState(defaultSerial);
   const [pdfBase64, setPdfBase64] = useState("");
   const [signatureText, setSignatureText] = useState("");
@@ -259,115 +257,121 @@ export function PkiTools({ certificates, issued, role }: Props) {
         )}
       </section>
 
-      <section className="panel toolPanel trustPanel">
-        <div className="panelHeader">
-          <ShieldCheck size={22} />
-          <h2>Confianza X.509</h2>
-        </div>
-        <form className="stackForm" onSubmit={runTrustValidation}>
-          <label>
-            Certificado
-            <select value={serialNumber} onChange={(event) => setSerialNumber(event.target.value)}>
-              {availableCertificates.map((item) => (
-                <option key={item.serial_number} value={item.serial_number}>
-                  {item.common_name} - {item.status}
-                </option>
+      {role === "admin" && (
+        <section className="panel toolPanel trustPanel">
+          <div className="panelHeader">
+            <ShieldCheck size={22} />
+            <h2>Confianza X.509</h2>
+          </div>
+          <form className="stackForm" onSubmit={runTrustValidation}>
+            <label>
+              Certificado
+              <select value={serialNumber} onChange={(event) => setSerialNumber(event.target.value)}>
+                {availableCertificates.map((item) => (
+                  <option key={item.serial_number} value={item.serial_number}>
+                    {item.common_name} - {item.status}
+                  </option>
+                ))}
+                {!availableCertificates.length && <option value="">Sin certificados</option>}
+              </select>
+            </label>
+            <label>
+              Proposito
+              <select value={trustPurpose} onChange={(event) => setTrustPurpose(event.target.value as TrustPurpose)}>
+                <option value="document_signing">Firma documental</option>
+                <option value="server_auth">Servidor TLS</option>
+                <option value="client_auth">Cliente</option>
+                <option value="device_auth">Dispositivo</option>
+                <option value="any">General</option>
+              </select>
+            </label>
+            <button className="primary" disabled={!serialNumber}>
+              <ShieldCheck size={16} />
+              Validar
+            </button>
+          </form>
+          {trustReport && (
+            <div className={`verification ${trustReport.valid ? "ok" : "bad"}`}>
+              <strong>{trustReport.valid ? "Confianza valida" : "Confianza no valida"}</strong>
+              <span>Cadena: {String(trustReport.chain.valid)}</span>
+              <span>Vigencia: {String(trustReport.validity.valid)}</span>
+              <span>Uso: {String(trustReport.key_usage.valid && trustReport.extended_key_usage.valid)}</span>
+              <span>Revocacion: {trustReport.revocation.status}</span>
+              {trustReport.errors.slice(0, 4).map((item) => (
+                <small key={item}>{item}</small>
               ))}
-              {!availableCertificates.length && <option value="">Sin certificados</option>}
-            </select>
-          </label>
-          <label>
-            Proposito
-            <select value={trustPurpose} onChange={(event) => setTrustPurpose(event.target.value as TrustPurpose)}>
-              <option value="document_signing">Firma documental</option>
-              <option value="server_auth">Servidor TLS</option>
-              <option value="client_auth">Cliente</option>
-              <option value="device_auth">Dispositivo</option>
-              <option value="any">General</option>
-            </select>
-          </label>
-          <button className="primary" disabled={!serialNumber}>
-            <ShieldCheck size={16} />
-            Validar
-          </button>
-        </form>
-        {trustReport && (
-          <div className={`verification ${trustReport.valid ? "ok" : "bad"}`}>
-            <strong>{trustReport.valid ? "Confianza valida" : "Confianza no valida"}</strong>
-            <span>Cadena: {String(trustReport.chain.valid)}</span>
-            <span>Vigencia: {String(trustReport.validity.valid)}</span>
-            <span>Uso: {String(trustReport.key_usage.valid && trustReport.extended_key_usage.valid)}</span>
-            <span>Revocacion: {trustReport.revocation.status}</span>
-            {trustReport.errors.slice(0, 4).map((item) => (
-              <small key={item}>{item}</small>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="panel toolPanel ocspPanel">
-        <div className="panelHeader">
-          <Radio size={22} />
-          <h2>OCSP</h2>
-        </div>
-        <form className="stackForm" onSubmit={runOcsp}>
-          <label>
-            Numero de serie
-            <input value={serialNumber} onChange={(event) => setSerialNumber(event.target.value)} />
-          </label>
-          <button className="primary">
-            <Search size={16} />
-            Consultar
-          </button>
-        </form>
-        {ocsp && (
-          <div className="resultLine">
-            <strong>{ocsp.status}</strong>
-            {ocsp.details && <span>{ocsp.details.certificate_status} / {ocsp.details.hash_algorithm}</span>}
-          </div>
-        )}
-      </section>
-
-      <section className="panel toolPanel caPanel">
-        <div className="panelHeader">
-          <ShieldCheck size={22} />
-          <h2>CA y CRL</h2>
-        </div>
-        <div className="buttonRow">
-          <button className="secondary" onClick={loadRootCa}>
-            <Download size={16} />
-            Root CA
-          </button>
-          <a className="secondary" href={apiUrl("/crl.pem")} download="edupki.crl.pem">
-            <Download size={16} />
-            CRL PEM
-          </a>
-          <a className="secondary" href={apiUrl("/crl.der")} download="edupki.crl.der">
-            <Download size={16} />
-            CRL DER
-          </a>
-          <button className="secondary" onClick={loadCrlManifest}>
-            <ListChecks size={16} />
-            Versiones
-          </button>
-        </div>
-        {rootCa && <textarea className="smallTextArea" value={rootCa} readOnly />}
-        {crlManifest && (
-          <div className="auditList">
-            <div className="resultLine">
-              <strong>CRL actual #{crlManifest.current_number}</strong>
-              <span>{crlManifest.versions[crlManifest.versions.length - 1]?.revoked_count ?? 0} certificados revocados/suspendidos</span>
             </div>
-            {crlManifest.versions.slice(-5).reverse().map((version) => (
-              <div className="auditItem" key={version.number}>
-                <strong>Version {version.number}</strong>
-                <span>{version.revoked_count} entradas</span>
-                <small>{new Date(version.created_at).toLocaleString()}</small>
-              </div>
-            ))}
+          )}
+        </section>
+      )}
+
+      {role === "admin" && (
+        <section className="panel toolPanel ocspPanel">
+          <div className="panelHeader">
+            <Radio size={22} />
+            <h2>OCSP</h2>
           </div>
-        )}
-      </section>
+          <form className="stackForm" onSubmit={runOcsp}>
+            <label>
+              Numero de serie
+              <input value={serialNumber} onChange={(event) => setSerialNumber(event.target.value)} />
+            </label>
+            <button className="primary">
+              <Search size={16} />
+              Consultar
+            </button>
+          </form>
+          {ocsp && (
+            <div className="resultLine">
+              <strong>{ocsp.status}</strong>
+              {ocsp.details && <span>{ocsp.details.certificate_status} / {ocsp.details.hash_algorithm}</span>}
+            </div>
+          )}
+        </section>
+      )}
+
+      {role === "admin" && (
+        <section className="panel toolPanel caPanel">
+          <div className="panelHeader">
+            <ShieldCheck size={22} />
+            <h2>CA y CRL</h2>
+          </div>
+          <div className="buttonRow">
+            <button className="secondary" onClick={loadRootCa}>
+              <Download size={16} />
+              Root CA
+            </button>
+            <a className="secondary" href={apiUrl("/crl.pem")} download="edupki.crl.pem">
+              <Download size={16} />
+              CRL PEM
+            </a>
+            <a className="secondary" href={apiUrl("/crl.der")} download="edupki.crl.der">
+              <Download size={16} />
+              CRL DER
+            </a>
+            <button className="secondary" onClick={loadCrlManifest}>
+              <ListChecks size={16} />
+              Versiones
+            </button>
+          </div>
+          {rootCa && <textarea className="smallTextArea" value={rootCa} readOnly />}
+          {crlManifest && (
+            <div className="auditList">
+              <div className="resultLine">
+                <strong>CRL actual #{crlManifest.current_number}</strong>
+                <span>{crlManifest.versions[crlManifest.versions.length - 1]?.revoked_count ?? 0} certificados revocados/suspendidos</span>
+              </div>
+              {crlManifest.versions.slice(-5).reverse().map((version) => (
+                <div className="auditItem" key={version.number}>
+                  <strong>Version {version.number}</strong>
+                  <span>{version.revoked_count} entradas</span>
+                  <small>{new Date(version.created_at).toLocaleString()}</small>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {role === "admin" && (
         <section className="panel toolPanel tlsPanel">
