@@ -1,0 +1,573 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{caption}
+
+\geometry{margin=2.5cm}
+\setlength{\parskip}{0.65em}
+\setlength{\parindent}{0pt}
+
+\definecolor{EduGreen}{RGB}{18,126,107}
+\definecolor{EduLight}{RGB}{238,247,244}
+\definecolor{EduGray}{RGB}{245,247,247}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=EduGreen,
+    urlcolor=EduGreen,
+    citecolor=EduGreen,
+    pdftitle={Manual de Usuario EduPKIManager},
+    pdfauthor={EduPKIManager}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{EduPKIManager}
+\rhead{Manual de Usuario}
+\cfoot{\thepage}
+
+\lstdefinestyle{terminal}{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{EduGray},
+    columns=fullflexible
+}
+
+\newcommand{\nota}[1]{
+    \begin{center}
+    \fcolorbox{EduGreen}{EduLight}{
+        \begin{minipage}{0.9\textwidth}
+        \textbf{Nota.} #1
+        \end{minipage}
+    }
+    \end{center}
+}
+
+\newcommand{\captura}[2]{
+    \begin{figure}[H]
+        \centering
+        \fbox{
+            \begin{minipage}[c][5cm][c]{0.88\textwidth}
+                \centering
+                \textbf{#1}\\[0.4cm]
+                \small Inserte aqui la captura correspondiente del sistema.
+            \end{minipage}
+        }
+        \caption{#2}
+    \end{figure}
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1.7cm}
+    {\Huge\bfseries Universidad La Salle - Arequipa\par}
+    \vspace{1cm}
+    {\Large Facultad de Ingenieria\par}
+    \vspace{0.5cm}
+    {\Large Escuela Profesional de Ingenieria de Software\par}
+
+    \vspace{3.0cm}
+    {\Huge\bfseries Manual de Usuario\par}
+    \vspace{0.6cm}
+    {\huge\bfseries EduPKIManager\par}
+    \vspace{0.4cm}
+    {\Large Plataforma PKI educativa\par}
+
+    \vspace{1.2cm}
+    {\Large\textbf{Proyecto 9:} PKI, Certificados X.509, Firmas Digitales y Criptografia Asimetrica\par}
+
+    \vfill
+    {\Large\textbf{Curso:} Ciberseguridad\par}
+    \vspace{0.35cm}
+    {\Large\textbf{Semestre:} X\par}
+    \vspace{0.35cm}
+    {\Large\textbf{Docente:} Marco Antonio Camacho Alatrista\par}
+    \vspace{0.35cm}
+    {\Large\textbf{Estudiante:} [Nombre del estudiante]\par}
+
+    \vspace{1.1cm}
+    {\Large Arequipa, Peru\par}
+    {\Large 12 de julio de 2026\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introduccion}
+
+\subsection{Proposito del Manual}
+
+Este manual proporciona una guia paso a paso para utilizar EduPKIManager desde la perspectiva de un administrador y de un usuario final. El documento explica el acceso al sistema, la navegacion principal, la gestion de certificados digitales, la firma de documentos PDF, la verificacion criptografica, la consulta de CRL/OCSP, la prueba TLS 1.3 y la revision de auditoria.
+
+\subsection{Descripcion General del Sistema}
+
+EduPKIManager es una plataforma web de Infraestructura de Clave Publica orientada a entornos educativos y empresariales. El sistema implementa una Autoridad Certificadora propia, emite certificados X.509 v3, gestiona su ciclo de vida, publica listas de revocacion, responde consultas OCSP, firma documentos PDF y permite validar la trazabilidad completa de la cadena de confianza.
+
+El sistema cuenta con dos experiencias de uso:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Administrador:} gestiona todos los certificados, opera la CA, revisa auditoria y ejecuta pruebas TLS.
+    \item \textbf{Usuario final:} solicita certificados personales, firma documentos y valida certificados o firmas propias.
+\end{itemize}
+
+\section{Acceso al Sistema}
+
+\subsection{Requisitos Previos}
+
+Para usar EduPKIManager localmente se requiere:
+
+\begin{itemize}[leftmargin=*]
+    \item Docker Desktop instalado y en ejecucion.
+    \item Navegador moderno: Google Chrome, Microsoft Edge, Firefox o similar.
+    \item Proyecto descargado o clonado en el equipo.
+    \item Archivo \texttt{hosts} configurado si se desea usar el dominio local \url{https://edupkimanager.com}.
+\end{itemize}
+
+\subsection{Acceso mediante dominio local HTTPS}
+
+El sistema esta preparado para abrirse mediante el dominio local \url{https://edupkimanager.com}. Este dominio no necesita estar comprado, porque se configura en el archivo \texttt{hosts} del equipo para apuntar a \texttt{127.0.0.1}.
+
+\begin{enumerate}[leftmargin=*]
+    \item Abra PowerShell como administrador.
+    \item Ingrese a la carpeta del proyecto.
+    \item Ejecute el helper de configuracion local:
+\end{enumerate}
+
+\begin{lstlisting}[style=terminal]
+.\scripts\setup_windows_tls.ps1
+\end{lstlisting}
+
+\begin{enumerate}[leftmargin=*,resume]
+    \item Para que el navegador confie en el certificado HTTPS emitido por la CA propia, ejecute:
+\end{enumerate}
+
+\begin{lstlisting}[style=terminal]
+.\scripts\setup_windows_tls.ps1 -TrustRootCa
+\end{lstlisting}
+
+\nota{Si PowerShell bloquea la ejecucion de scripts, ejecute primero \texttt{Set-ExecutionPolicy -Scope CurrentUser RemoteSigned} y vuelva a correr el helper.}
+
+\subsection{Acceso local con Docker Compose}
+
+Desde la raiz del proyecto, levante todos los servicios con:
+
+\begin{lstlisting}[style=terminal]
+docker compose up -d --build
+\end{lstlisting}
+
+Luego abra el navegador en una de las siguientes direcciones:
+
+\begin{itemize}[leftmargin=*]
+    \item Panel web HTTPS: \url{https://edupkimanager.com}
+    \item Panel web HTTP de respaldo: \url{http://edupkimanager.com}
+    \item Panel web por puerto local: \url{http://localhost:3000}
+    \item API directa: \url{http://127.0.0.1:8000/api}
+\end{itemize}
+
+\captura{Pantalla de inicio de EduPKIManager}{Acceso al sistema EduPKIManager}
+
+\subsection{Credenciales de Demostracion}
+
+\begin{longtable}{>{\bfseries}p{4cm}p{4cm}p{6cm}}
+\toprule
+Rol & Credencial & Uso principal \\
+\midrule
+Administrador & \texttt{admin / admin123} & Gestion completa de certificados, auditoria, TLS y operaciones administrativas. \\
+Usuario final & \texttt{user / user123} & Solicitud de certificados personales, firma PDF y validacion de confianza. \\
+\bottomrule
+\end{longtable}
+
+\nota{En un despliegue productivo se deben cambiar las credenciales demo desde el archivo \texttt{.env}.}
+
+\section{Navegacion del Sistema}
+
+\subsection{Inicio de Sesion}
+
+Al abrir el sistema se presenta una pantalla de autenticacion. El usuario debe ingresar su nombre de usuario y contrasena. Despues de iniciar sesion, el frontend recibe un token y lo usa para comunicarse con la API.
+
+\captura{Formulario de inicio de sesion}{Inicio de sesion con rol administrador o usuario}
+
+\subsection{Barra Superior}
+
+La barra superior muestra el nombre EduPKIManager, el subtitulo de la consola y las opciones disponibles segun el rol autenticado.
+
+\begin{itemize}[leftmargin=*]
+    \item Si el rol es \textbf{admin}, aparecen las vistas \textit{Administracion} y \textit{Operaciones PKI}.
+    \item Si el rol es \textbf{user}, aparecen las vistas \textit{Mi portal} y \textit{Firmas y validacion}.
+    \item El boton de salida permite cerrar la sesion actual y volver al login.
+\end{itemize}
+
+\captura{Barra superior por roles}{Navegacion principal del sistema}
+
+\subsection{Tarjetas de Resumen}
+
+En la parte superior del panel se muestran indicadores rapidos:
+
+\begin{itemize}[leftmargin=*]
+    \item Total de certificados visibles para el rol actual.
+    \item Certificados activos.
+    \item Certificados revocados o suspendidos.
+\end{itemize}
+
+Para el administrador, los indicadores se calculan sobre todos los certificados. Para el usuario final, se calculan solo sobre sus certificados propios.
+
+\section{Panel de Administrador}
+
+\subsection{Descripcion}
+
+El panel de administrador permite administrar el ciclo de vida completo de certificados emitidos por EduPKIManager. Desde esta vista se pueden emitir certificados para usuarios, servidores o dispositivos, consultar su estado, renovarlos, suspenderlos o revocarlos.
+
+\captura{Panel de Administracion}{Panel de gestion completa para administradores}
+
+\subsection{Emitir un Certificado}
+
+Para emitir un certificado:
+
+\begin{enumerate}[leftmargin=*]
+    \item Inicie sesion con el usuario \texttt{admin}.
+    \item Ingrese a la vista \textit{Administracion}.
+    \item Complete el nombre comun o \textit{Common Name}; por ejemplo, \texttt{portal.edu.local}.
+    \item Seleccione el tipo de certificado: usuario, servidor o dispositivo.
+    \item Indique el propietario del certificado.
+    \item Defina los SAN si corresponde, separados por coma.
+    \item Seleccione el algoritmo de clave: RSA-2048, RSA-4096 o ECDSA P-256.
+    \item Presione el boton de emision.
+\end{enumerate}
+
+Al finalizar, el sistema registra el certificado, muestra sus datos y conserva la trazabilidad de auditoria.
+
+\captura{Formulario de emision de certificados}{Emision de certificado X.509 v3}
+
+\subsection{Listar y Consultar Certificados}
+
+La tabla de certificados permite revisar:
+
+\begin{itemize}[leftmargin=*]
+    \item Identificador interno.
+    \item Numero de serie.
+    \item Common Name.
+    \item Tipo de certificado.
+    \item Propietario.
+    \item Estado: emitido, suspendido, revocado o renovado.
+    \item Fechas de vigencia.
+\end{itemize}
+
+\subsection{Renovar un Certificado}
+
+La renovacion marca el certificado original como renovado y crea un nuevo certificado con el mismo propietario y tipo.
+
+\begin{enumerate}[leftmargin=*]
+    \item Ubique el certificado en la tabla.
+    \item Presione la accion \textit{Renovar}.
+    \item Confirme la operacion si el navegador lo solicita.
+    \item Verifique que aparezca un nuevo certificado activo.
+\end{enumerate}
+
+\subsection{Suspender un Certificado}
+
+La suspension deja el certificado en estado \texttt{suspended} y lo incorpora a la CRL con la razon \texttt{certificate\_hold}.
+
+\begin{enumerate}[leftmargin=*]
+    \item Ubique el certificado que desea suspender.
+    \item Presione la accion \textit{Suspender}.
+    \item Revise que el estado cambie a \texttt{suspended}.
+    \item Descargue la CRL para comprobar que el certificado aparece como retenido.
+\end{enumerate}
+
+\subsection{Revocar un Certificado}
+
+La revocacion invalida el certificado y lo incluye en la CRL. Debe usarse cuando la clave privada fue expuesta, el propietario ya no debe usar el certificado o el certificado fue emitido por error.
+
+\begin{enumerate}[leftmargin=*]
+    \item Ubique el certificado.
+    \item Presione \textit{Revocar}.
+    \item Indique o acepte la razon de revocacion.
+    \item Confirme que el estado cambie a \texttt{revoked}.
+\end{enumerate}
+
+\section{Portal de Usuario Final}
+
+\subsection{Descripcion}
+
+El portal de usuario final esta orientado a operaciones personales. El usuario puede solicitar certificados propios, descargarlos, consultar su estado, firmar documentos y validar certificados o firmas.
+
+\captura{Portal de usuario final}{Vista Mi portal para usuario final}
+
+\subsection{Solicitar Certificado Personal}
+
+Para solicitar un certificado:
+
+\begin{enumerate}[leftmargin=*]
+    \item Inicie sesion con el usuario \texttt{user}.
+    \item Ingrese a \textit{Mi portal}.
+    \item Escriba el Common Name del certificado, por ejemplo \texttt{student.edu.local}.
+    \item Presione el boton de solicitud.
+    \item Verifique que el certificado aparezca en la lista de certificados propios.
+\end{enumerate}
+
+\nota{El usuario final solo puede emitir certificados de tipo usuario y solo puede operar sobre certificados cuyo propietario coincida con su cuenta.}
+
+\subsection{Descargar Certificado Propio}
+
+El usuario puede descargar el certificado PEM para usarlo en validaciones o pruebas externas. La clave privada solo se entrega al momento de la emision y debe custodiarse con cuidado.
+
+\subsection{Consultar Estado}
+
+El estado del certificado permite saber si esta activo, suspendido, revocado o renovado. Antes de firmar documentos se recomienda confirmar que el certificado este en estado \texttt{issued}.
+
+\section{Operaciones PKI}
+
+\subsection{Firma Digital de PDF}
+
+EduPKIManager permite firmar documentos PDF mediante certificados emitidos por la CA propia. El sistema soporta dos formatos:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Firma JSON desprendida:} devuelve un sobre JSON con hash, certificado, cadena y firma.
+    \item \textbf{Firma PAdES embebida:} devuelve un PDF firmado descargable.
+\end{itemize}
+
+Proceso general:
+
+\begin{enumerate}[leftmargin=*]
+    \item Ingrese a \textit{Operaciones PKI} o \textit{Firmas y validacion}.
+    \item Seleccione un certificado activo.
+    \item Cargue el archivo PDF.
+    \item Presione \textit{Firmar JSON} o \textit{Firmar PAdES}.
+    \item Descargue el resultado generado.
+\end{enumerate}
+
+\captura{Modulo de firma PDF}{Firma digital de documentos PDF}
+
+\subsection{Verificacion de PDF}
+
+Para verificar una firma JSON desprendida:
+
+\begin{enumerate}[leftmargin=*]
+    \item Cargue el PDF original.
+    \item Cargue el archivo JSON de firma.
+    \item Presione \textit{Verificar JSON}.
+    \item Revise el resultado de integridad, firma, cadena de confianza, CRL y OCSP.
+\end{enumerate}
+
+Para verificar un PDF PAdES:
+
+\begin{enumerate}[leftmargin=*]
+    \item Cargue el PDF firmado.
+    \item Presione \textit{Verificar PAdES}.
+    \item Revise si la firma esta intacta, confiable y asociada a la Root CA de EduPKIManager.
+\end{enumerate}
+
+\captura{Modulo de verificacion PDF}{Verificacion de firmas desprendidas y PAdES}
+
+\subsection{Validacion de Confianza X.509}
+
+El modulo de confianza X.509 revisa la cadena completa del certificado:
+
+\begin{itemize}[leftmargin=*]
+    \item Firma del certificado por la Intermediate CA.
+    \item Ancla de confianza Root CA.
+    \item Vigencia temporal.
+    \item Basic Constraints, Key Usage y Extended Key Usage.
+    \item Politicas de certificado.
+    \item Estado local.
+    \item CRL y OCSP.
+\end{itemize}
+
+El usuario debe seleccionar el certificado y el proposito de validacion:
+
+\begin{itemize}[leftmargin=*]
+    \item Firma documental.
+    \item TLS servidor.
+    \item Cliente.
+    \item Dispositivo.
+    \item General.
+\end{itemize}
+
+\captura{Modulo de confianza X.509}{Validacion de cadena y usos permitidos}
+
+\subsection{Consulta OCSP}
+
+OCSP permite conocer el estado en linea de un certificado usando su numero de serie.
+
+\begin{enumerate}[leftmargin=*]
+    \item Copie el numero de serie del certificado.
+    \item Pegue el valor en el modulo OCSP.
+    \item Presione \textit{Consultar}.
+    \item Revise el estado devuelto: \texttt{good}, \texttt{revoked} o \texttt{unknown}.
+\end{enumerate}
+
+\captura{Modulo OCSP}{Consulta de estado OCSP por numero de serie}
+
+\subsection{CA y CRL}
+
+La seccion CA y CRL permite descargar artefactos publicos:
+
+\begin{itemize}[leftmargin=*]
+    \item Certificado Root CA en PEM.
+    \item CRL en PEM.
+    \item CRL en DER.
+    \item Manifiesto de versiones de CRL.
+\end{itemize}
+
+La CRL se actualiza automaticamente por el servicio \texttt{crl\_scheduler} y tambien puede publicarse al consultar los endpoints de CRL.
+
+\subsection{Prueba TLS 1.3}
+
+El sistema incluye una demostracion de handshake TLS 1.3 usando un certificado de servidor emitido por la CA propia.
+
+\begin{enumerate}[leftmargin=*]
+    \item Inicie sesion como administrador.
+    \item Ingrese a \textit{Operaciones PKI}.
+    \item Abra la tarjeta \textit{TLS 1.3}.
+    \item Presione \textit{Probar handshake}.
+    \item Confirme que cliente y servidor reporten \texttt{TLSv1.3}.
+\end{enumerate}
+
+\captura{Modulo TLS 1.3}{Prueba de handshake TLS 1.3}
+
+\subsection{Auditoria}
+
+La auditoria esta disponible para el administrador. Cada operacion criptografica relevante se registra con:
+
+\begin{itemize}[leftmargin=*]
+    \item Numero de secuencia.
+    \item Fecha y hora.
+    \item Actor.
+    \item Operacion.
+    \item Resultado.
+    \item Hash previo.
+    \item Hash de la entrada.
+\end{itemize}
+
+El sistema verifica la cadena de hashes. Si una entrada se modifica o elimina, la auditoria deja de validar.
+
+\captura{Modulo de auditoria}{Registro inmutable con hash encadenado}
+
+\section{Flujo Recomendado de Demostracion}
+
+Para una demostracion completa se recomienda el siguiente recorrido:
+
+\begin{enumerate}[leftmargin=*]
+    \item Iniciar sesion como administrador.
+    \item Emitir un certificado de usuario.
+    \item Emitir un certificado de servidor para \texttt{edupkimanager.com}.
+    \item Firmar un PDF con un certificado activo.
+    \item Verificar la firma del PDF.
+    \item Validar la confianza X.509 del certificado.
+    \item Consultar el estado OCSP.
+    \item Suspender o revocar un certificado.
+    \item Descargar la CRL y revisar el manifiesto.
+    \item Probar el handshake TLS 1.3.
+    \item Abrir auditoria y confirmar que la cadena sea integra.
+\end{enumerate}
+
+\section{Solucion de Problemas}
+
+\subsection{El dominio \texttt{edupkimanager.com} no abre}
+
+\begin{enumerate}[leftmargin=*]
+    \item Verifique que Docker este en ejecucion.
+    \item Confirme que el archivo \texttt{hosts} tenga la entrada:
+\end{enumerate}
+
+\begin{lstlisting}[style=terminal]
+127.0.0.1 edupkimanager.com www.edupkimanager.com
+\end{lstlisting}
+
+\begin{enumerate}[leftmargin=*,resume]
+    \item Ejecute nuevamente el helper:
+\end{enumerate}
+
+\begin{lstlisting}[style=terminal]
+.\scripts\setup_windows_tls.ps1
+\end{lstlisting}
+
+\subsection{El navegador muestra advertencia de certificado}
+
+Esto ocurre cuando la Root CA propia aun no fue importada como autoridad confiable.
+
+\begin{lstlisting}[style=terminal]
+.\scripts\setup_windows_tls.ps1 -TrustRootCa
+\end{lstlisting}
+
+Tambien puede descargar manualmente la Root CA desde:
+
+\begin{lstlisting}[style=terminal]
+http://127.0.0.1:8000/api/ca/root.pem
+\end{lstlisting}
+
+\subsection{No puedo firmar un PDF}
+
+Revise los siguientes puntos:
+
+\begin{itemize}[leftmargin=*]
+    \item El certificado debe estar en estado \texttt{issued}.
+    \item El usuario solo puede firmar con certificados propios.
+    \item El archivo debe ser un PDF valido.
+    \item Para PAdES, el backend debe tener disponible \texttt{pyHanko}.
+\end{itemize}
+
+\subsection{No veo todos los certificados}
+
+El comportamiento depende del rol:
+
+\begin{itemize}[leftmargin=*]
+    \item Administrador: ve todos los certificados.
+    \item Usuario final: ve solo sus certificados propios.
+\end{itemize}
+
+\subsection{La consulta OCSP devuelve \texttt{unknown}}
+
+El estado \texttt{unknown} indica que el numero de serie consultado no corresponde a un certificado registrado en la base de datos del sistema.
+
+\subsection{La auditoria aparece invalida}
+
+Si la cadena de auditoria aparece invalida, alguna entrada del archivo de auditoria fue alterada, eliminada o escrita fuera del flujo normal. En ese caso se debe conservar evidencia, revisar el indice reportado y restaurar desde respaldo confiable si aplica.
+
+\section{Buenas Practicas}
+
+\begin{itemize}[leftmargin=*]
+    \item Cambiar las credenciales demo antes de un despliegue serio.
+    \item Proteger la variable \texttt{CA\_KEY\_PASSWORD}.
+    \item No compartir claves privadas de certificados.
+    \item Revocar certificados comprometidos inmediatamente.
+    \item Revisar periodicamente la CRL y la auditoria.
+    \item Usar HTTPS con TLS 1.3 para el acceso principal.
+    \item Exportar evidencias de prueba antes de la entrega final.
+\end{itemize}
+
+\section{Glosario}
+
+\begin{longtable}{>{\bfseries}p{4cm}p{10cm}}
+\toprule
+Termino & Definicion \\
+\midrule
+CA & Autoridad Certificadora encargada de emitir y firmar certificados digitales. \\
+Root CA & Certificado raiz que actua como ancla de confianza. \\
+Intermediate CA & CA intermedia que firma certificados finales y reduce exposicion de la Root CA. \\
+Certificado X.509 & Documento digital que vincula una identidad con una clave publica. \\
+CRL & Lista de Revocacion de Certificados publicada por la CA. \\
+OCSP & Protocolo de consulta en linea para verificar el estado de un certificado. \\
+PAdES & Perfil de firma electronica avanzada para documentos PDF. \\
+TLS 1.3 & Version moderna del protocolo TLS para comunicaciones seguras. \\
+SAN & Subject Alternative Name; nombres alternativos validos para un certificado. \\
+\bottomrule
+\end{longtable}
+
+\end{document}
