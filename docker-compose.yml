@@ -26,7 +26,6 @@ services:
       EDUPKI_DATA_DIR: /app/backend/data
       EDUPKI_PUBLIC_BASE_URL: ${EDUPKI_PUBLIC_BASE_URL:-https://edupkimanager.com/api}
       EDUPKI_ADMIN_PASSWORD: ${EDUPKI_ADMIN_PASSWORD:-admin123}
-      EDUPKI_USER_PASSWORD: ${EDUPKI_USER_PASSWORD:-user123}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-only-edupki-secret}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}

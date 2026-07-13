@@ -26,8 +26,9 @@ def main() -> None:
     parser.add_argument("--https-server-name", default="edupkimanager.com")
     parser.add_argument("--admin-user", default="admin")
     parser.add_argument("--admin-password", default=os.getenv("EDUPKI_ADMIN_PASSWORD", "admin123"))
-    parser.add_argument("--user-name", default="user")
-    parser.add_argument("--user-password", default=os.getenv("EDUPKI_USER_PASSWORD", "user123"))
+    parser.add_argument("--user-name", default="abel.aragon")
+    parser.add_argument("--user-password", default="abel123")
+    parser.add_argument("--user-owner", default="Abel Aragon")
     args = parser.parse_args()
 
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -99,7 +100,7 @@ def main() -> None:
 
     admin_headers = auth_headers(args.admin_user, args.admin_password)
     user_headers = auth_headers(args.user_name, args.user_password)
-    record("Authentication", "pass", "Admin and user demo accounts authenticated successfully.")
+    record("Authentication", "pass", "Admin and fixed owner account authenticated successfully.")
 
     common_name = f"evidence-{run_id.lower()}.edu.local"
     issued = checked(
@@ -111,11 +112,12 @@ def main() -> None:
                 "organization": "EduPKIManager",
                 "organizational_unit": "Evidence",
                 "country": "PE",
+                "owner": args.user_owner,
                 "sans": [common_name],
                 "validity_days": 90,
                 "key_algorithm": "rsa-2048",
             },
-            headers=user_headers,
+            headers=admin_headers,
             timeout=30,
         ),
         expected=(201,),
@@ -124,7 +126,7 @@ def main() -> None:
     issued_public["private_key_pem"] = "<redacted>"
     cert_json_path = write_json("issued-certificate.json", issued_public)
     cert_pem_path = write_text("issued-certificate.pem", issued["certificate_pem"])
-    record("Certificate issuance", "pass", f"Issued user certificate serial {issued['serial_number']}.", cert_json_path)
+    record("Certificate issuance", "pass", f"Admin issued user certificate serial {issued['serial_number']} for {args.user_owner}.", cert_json_path)
     artifacts.append({"name": "Issued certificate PEM", "file": cert_pem_path.name})
 
     trust_good = checked(

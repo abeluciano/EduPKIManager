@@ -93,4 +93,3 @@ CSRF_TRUSTED_ORIGINS = os.getenv(
 )
 CSRF_TRUSTED_ORIGINS = [item.strip() for item in CSRF_TRUSTED_ORIGINS.split(",") if item.strip()]
 EDUPKI_ADMIN_PASSWORD = os.getenv("EDUPKI_ADMIN_PASSWORD", "admin123")
-EDUPKI_USER_PASSWORD = os.getenv("EDUPKI_USER_PASSWORD", "user123")

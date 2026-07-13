@@ -7,6 +7,7 @@ urlpatterns = [
     path("health/", views.HealthView.as_view(), name="health"),
     path("readiness/", views.ReadinessView.as_view(), name="readiness"),
     path("auth/login/", views.AuthLoginView.as_view(), name="auth-login"),
+    path("owners/", views.OwnerListView.as_view(), name="owners"),
     path("ca/root/", views.RootCaView.as_view(), name="root-ca"),
     path("ca/root.pem", views.RootCaPemView.as_view(), name="root-ca-pem"),
     path("ca/chain.pem", views.CaChainPemView.as_view(), name="ca-chain-pem"),

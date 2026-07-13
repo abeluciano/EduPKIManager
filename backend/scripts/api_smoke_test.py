@@ -40,7 +40,8 @@ def main() -> None:
     assert chain_pem.text.count("BEGIN CERTIFICATE") >= 2
 
     admin_headers = auth_headers("admin", os.getenv("EDUPKI_ADMIN_PASSWORD", "admin123"))
-    user_headers = auth_headers("user", os.getenv("EDUPKI_USER_PASSWORD", "user123"))
+    user_owner = "Abel Aragon"
+    user_headers = auth_headers("abel.aragon", "abel123")
 
     issued = requests.post(
         f"{BASE_URL}/certificates/",
@@ -55,7 +56,7 @@ def main() -> None:
     )
     issued.raise_for_status()
     certificate = issued.json()
-    assert certificate["owner"] == "admin"
+    assert certificate["owner"] == "Universidad la Salle"
 
     listed = requests.get(f"{BASE_URL}/certificates/", headers=admin_headers, timeout=10)
     listed.raise_for_status()
@@ -64,37 +65,38 @@ def main() -> None:
     detail.raise_for_status()
     assert detail.json()["serial_number"] == certificate["serial_number"]
 
-    forbidden_user_server = requests.post(
+    forbidden_user_issue = requests.post(
         f"{BASE_URL}/certificates/",
         json={
-            "common_name": "forbidden-server.edu.local",
-            "certificate_type": "server",
-            "sans": ["forbidden-server.edu.local"],
+            "common_name": "forbidden-user.edu.local",
+            "certificate_type": "user",
+            "sans": ["forbidden-user.edu.local"],
             "validity_days": 365,
         },
         headers=user_headers,
         timeout=30,
     )
-    assert forbidden_user_server.status_code == 403
+    assert forbidden_user_issue.status_code == 403
 
     user_issued = requests.post(
         f"{BASE_URL}/certificates/",
         json={
             "common_name": "student.edu.local",
             "certificate_type": "user",
+            "owner": user_owner,
             "sans": ["student.edu.local"],
             "validity_days": 365,
         },
-        headers=user_headers,
+        headers=admin_headers,
         timeout=30,
     )
     user_issued.raise_for_status()
     user_certificate = user_issued.json()
-    assert user_certificate["owner"] == "user"
+    assert user_certificate["owner"] == user_owner
 
     own_list = requests.get(f"{BASE_URL}/certificates/", headers=user_headers, timeout=10)
     own_list.raise_for_status()
-    assert all(item["owner"] == "user" for item in own_list.json())
+    assert all(item["owner"] == user_owner for item in own_list.json())
 
     forbidden_detail = requests.get(f"{BASE_URL}/certificates/{certificate['id']}/", headers=user_headers, timeout=10)
     assert forbidden_detail.status_code == 403
@@ -202,6 +204,7 @@ def main() -> None:
         json={
             "common_name": "revoked.edu.local",
             "certificate_type": "device",
+            "owner": "Carlos Mijail",
             "sans": ["revoked.edu.local"],
             "validity_days": 365,
         },

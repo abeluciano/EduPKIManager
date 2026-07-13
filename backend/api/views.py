@@ -26,6 +26,7 @@ from scripts.tls13_demo import run_tls13_handshake_demo
 from validation.trust import validate_certificate_trust
 
 from .models import CertificateRecord
+from .users import OWNER_ACCOUNTS, OWNER_NAMES
 
 
 AUDIT_LOG = default_audit_log_path()
@@ -99,9 +100,18 @@ class AuthLoginView(APIView):
         user = _demo_users().get(username)
         if user is None or user["password"] != password:
             raise AuthenticationFailed("Invalid credentials.")
-        token = signing.dumps({"actor": username, "role": user["role"]}, salt=AUTH_SALT)
-        append_audit_entry(AUDIT_LOG, "login", username, "success", {"role": user["role"]})
-        return Response({"actor": username, "role": user["role"], "token": token})
+        token = signing.dumps(
+            {"actor": user["actor"], "role": user["role"], "username": username, "display_name": user["display_name"]},
+            salt=AUTH_SALT,
+        )
+        append_audit_entry(AUDIT_LOG, "login", user["actor"], "success", {"role": user["role"], "username": username})
+        return Response({"actor": user["actor"], "display_name": user["display_name"], "role": user["role"], "token": token, "username": username})
+
+
+class OwnerListView(APIView):
+    def get(self, request):
+        _require_role(request, {"admin"})
+        return Response([{"name": name} for name in OWNER_NAMES])
 
 
 class RootCaView(APIView):
@@ -142,19 +152,19 @@ class CertificateListCreateView(APIView):
         return Response([_record_payload(record, include_private_key=False) for record in records])
 
     def post(self, request):
-        context = _require_role(request, {"admin", "user"})
+        context = _require_role(request, {"admin"})
         payload = request.data
         certificate_type = payload.get("certificate_type", "user")
-        if context["role"] != "admin" and certificate_type != "user":
+        owner = str(payload.get("owner") or OWNER_NAMES[0])
+        if owner not in OWNER_NAMES:
             append_audit_entry(
                 AUDIT_LOG,
                 "issue_certificate",
                 context["actor"],
                 "failed",
-                {"reason": "user_role_can_only_issue_user_certificates", "requested_type": certificate_type},
+                {"reason": "invalid_owner", "owner": owner, "allowed_owners": list(OWNER_NAMES)},
             )
-            raise PermissionDenied("User role can only request user certificates.")
-        owner = str(payload.get("owner") or context["actor"]) if context["role"] == "admin" else context["actor"]
+            return Response({"detail": "Owner is not allowed.", "allowed_owners": list(OWNER_NAMES)}, status=status.HTTP_400_BAD_REQUEST)
         cert_request = CertificateRequest(
             common_name=payload["common_name"],
             certificate_type=certificate_type,
@@ -521,7 +531,7 @@ def _auth_context(request, required: bool) -> dict[str, str] | None:
             payload = signing.loads(token, salt=AUTH_SALT, max_age=60 * 60 * 12)
         except signing.BadSignature as exc:
             raise AuthenticationFailed("Invalid or expired token.") from exc
-        return {"actor": str(payload["actor"]), "role": str(payload["role"])}
+        return {"actor": str(payload["actor"]), "role": str(payload["role"]), "username": str(payload.get("username", payload["actor"]))}
 
     role = request.headers.get("X-Actor-Role")
     actor = request.headers.get("X-Actor")
@@ -533,7 +543,19 @@ def _auth_context(request, required: bool) -> dict[str, str] | None:
 
 
 def _demo_users() -> dict[str, dict[str, str]]:
-    return {
-        "admin": {"password": getattr(settings, "EDUPKI_ADMIN_PASSWORD", "admin123"), "role": "admin"},
-        "user": {"password": getattr(settings, "EDUPKI_USER_PASSWORD", "user123"), "role": "user"},
+    users = {
+        "admin": {
+            "password": getattr(settings, "EDUPKI_ADMIN_PASSWORD", "admin123"),
+            "role": "admin",
+            "actor": "admin",
+            "display_name": "Administrador",
+        },
     }
+    for account in OWNER_ACCOUNTS:
+        users[account["username"]] = {
+            "password": account["password"],
+            "role": "user",
+            "actor": account["display_name"],
+            "display_name": account["display_name"],
+        }
+    return users

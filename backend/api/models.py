@@ -13,7 +13,7 @@ class CertificateRecord(models.Model):
     serial_number = models.CharField(max_length=80, unique=True)
     common_name = models.CharField(max_length=255)
     certificate_type = models.CharField(max_length=16, choices=TYPE_CHOICES)
-    owner = models.CharField(max_length=150, default="admin", db_index=True)
+    owner = models.CharField(max_length=150, default="Universidad la Salle", db_index=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="issued")
     certificate_pem = models.TextField()
     private_key_pem = models.TextField(blank=True)

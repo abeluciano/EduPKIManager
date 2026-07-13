@@ -10,19 +10,16 @@ REQUIRED_PRODUCTION_VALUES = (
     "CA_KEY_PASSWORD",
     "DJANGO_SECRET_KEY",
     "EDUPKI_ADMIN_PASSWORD",
-    "EDUPKI_USER_PASSWORD",
 )
 
 UNSAFE_VALUES = {
     "",
     "admin123",
-    "user123",
     "edupki",
     "change-me-admin-password",
     "change-me-ca-key-password",
     "change-me-django-secret-key",
     "change-me-postgres-password",
-    "change-me-user-password",
     "change-this-in-production",
     "change-me-dev-password",
     "dev-only-edupki-secret",

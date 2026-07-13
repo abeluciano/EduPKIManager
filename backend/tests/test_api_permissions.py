@@ -29,7 +29,8 @@ else:
             set_storage_dir(self.tmp.name)
             self.client = APIClient()
             self.admin_token = self._login("admin", "admin123")
-            self.user_token = self._login("user", "user123")
+            self.user_owner = "Abel Aragon"
+            self.user_token = self._login("abel.aragon", "abel123")
 
         def tearDown(self) -> None:
             self.tmp.cleanup()
@@ -40,7 +41,7 @@ else:
                 {
                     "common_name": "portal.edu.local",
                     "certificate_type": "server",
-                    "owner": "admin",
+                    "owner": "Universidad la Salle",
                     "sans": ["portal.edu.local"],
                     "validity_days": 365,
                 },
@@ -52,9 +53,9 @@ else:
             forbidden_issue = self.client.post(
                 "/api/certificates/",
                 {
-                    "common_name": "server-by-user.edu.local",
-                    "certificate_type": "server",
-                    "sans": ["server-by-user.edu.local"],
+                    "common_name": "student-by-user.edu.local",
+                    "certificate_type": "user",
+                    "sans": ["student-by-user.edu.local"],
                     "validity_days": 365,
                 },
                 format="json",
@@ -67,18 +68,22 @@ else:
                 {
                     "common_name": "student.edu.local",
                     "certificate_type": "user",
+                    "owner": self.user_owner,
                     "sans": ["student.edu.local"],
                     "validity_days": 365,
                 },
                 format="json",
-                HTTP_AUTHORIZATION=f"Bearer {self.user_token}",
+                HTTP_AUTHORIZATION=f"Bearer {self.admin_token}",
             )
             self.assertEqual(user_cert.status_code, 201)
-            self.assertEqual(user_cert.json()["owner"], "user")
+            self.assertEqual(user_cert.json()["owner"], self.user_owner)
 
             user_list = self.client.get("/api/certificates/", HTTP_AUTHORIZATION=f"Bearer {self.user_token}")
             self.assertEqual(user_list.status_code, 200)
-            self.assertEqual([item["owner"] for item in user_list.json()], ["user"])
+            user_items = user_list.json()
+            self.assertTrue(user_items)
+            self.assertTrue(all(item["owner"] == self.user_owner for item in user_items))
+            self.assertIn(user_cert.json()["serial_number"], [item["serial_number"] for item in user_items])
 
             foreign_detail = self.client.get(
                 f"/api/certificates/{admin_cert.json()['id']}/",
